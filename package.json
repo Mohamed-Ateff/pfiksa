@@ -1,0 +1,24 @@
+{
+  "name": "employee-boss-reporting-system",
+  "version": "1.0.0",
+  "description": "Full-stack Employee-Boss Reporting System",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "keywords": [
+    "express",
+    "react",
+    "mongodb",
+    "reporting"
+  ],
+  "author": "",
+  "license": "ISC"
+}

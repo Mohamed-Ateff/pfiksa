@@ -1,0 +1,327 @@
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
+
+const LanguageContext = createContext(null);
+
+const translations = {
+  en: {
+    common: {
+      appName: "Daily Report Studio",
+      manager: "Manager",
+      employee: "Employee",
+      languageSwitch: "AR",
+      na: "N/A",
+      cancel: "Cancel",
+      close: "Close",
+      delete: "Delete",
+      saveChanges: "Save changes",
+      updatePassword: "Update password",
+    },
+    login: {
+      signInAs: "Sign in as",
+      email: "Email",
+      password: "Password",
+      login: "Login",
+      roleMismatch: "Selected role does not match this account.",
+      loginFailed: "Login failed",
+    },
+    register: {
+      title: "Register",
+      confirmPassword: "Confirm Password",
+      submit: "Register",
+      haveAccount: "Already have an account?",
+      loginLink: "Login here",
+      passwordMismatch: "Passwords do not match",
+      registrationFailed: "Registration failed",
+    },
+    employee: {
+      welcomeBack: "Welcome back, {name}",
+      snapshotTitle: "Today Snapshot",
+      snapshotSubtitle: "Track your submissions and what has been reviewed.",
+      totalSubmitted: "Total reports submitted",
+      checked: "Checked",
+      pending: "Pending",
+      submitTitle: "Submit Daily Report",
+      submitSubtitle:
+        "Keep it clear, simple, and honest. Attach any supporting files.",
+      completedTasksLabel: "Completed Tasks (Required)",
+      completedTasksPlaceholder: "List the tasks you completed today",
+      inProgressLabel: "Tasks in Progress",
+      inProgressPlaceholder: "What are you still working on?",
+      commitmentsLabel: "Commitments",
+      commitmentsPlaceholder: "What will you commit to next?",
+      challengesLabel: "Challenges",
+      challengesPlaceholder: "Describe any blockers or challenges",
+      attachFiles: "Attach files",
+      filesSelected: "{count} file(s) selected",
+      noFilesSelected: "No files selected",
+      multiFileHint: "You can select multiple files and photos.",
+      submitReport: "Submit Report",
+      yourReports: "Your Reports",
+      yourReportsSubtitle: "Track your recent submissions and review status.",
+      reportSubmitted: "Report submitted successfully!",
+      reportSubmitError: "Error submitting report",
+      reportDeleted: "Report deleted successfully!",
+      reportDeleteError: "Error deleting report",
+      deleteReport: "Delete report",
+      confirmDeleteTitle: "Confirm Delete",
+      confirmDeleteBody: "Are you sure you want to delete this report?",
+      reportDetails: "Report Details",
+      completedTasks: "Completed Tasks",
+      inProgress: "Tasks in Progress",
+      commitments: "Commitments",
+      challenges: "Challenges",
+      checkedBy: "Checked by",
+      approvalNotes: "Approval Notes",
+      files: "Files",
+      noFilesAttached: "No files attached",
+      noTasks: "No completed tasks listed",
+      none: "None",
+    },
+    manager: {
+      dailyReports: "Daily Reports",
+      dailyReportsSubtitle:
+        "Review today's updates, mark what is checked, and print when ready.",
+      totalReports: "Total reports",
+      reportsFor: "Reports for {date} ({shown} of {total})",
+      searchReports: "Search reports",
+      reportDetails: "Report Details",
+      tasks: "Tasks",
+      struggles: "Struggles",
+      notes: "Notes",
+      completedTasks: "Completed Tasks",
+      inProgress: "Tasks in Progress",
+      commitments: "Commitments",
+      challenges: "Challenges",
+      checkedBy: "Checked by",
+      approvalNotes: "Approval Notes",
+      approvalNotesPlaceholder: "Add a note for this report",
+      markChecked: "Mark checked",
+      markUnchecked: "Mark unchecked",
+      files: "Files",
+      noTasks: "No completed tasks listed",
+      none: "None",
+      noFilesAttached: "No files attached",
+      printReport: "Print report",
+      userManagement: "User Management",
+      userManagementTooltip: "User management",
+      userManagementHint: "View, edit, reset passwords, or remove accounts.",
+      addUser: "Add user",
+      createUser: "Create user",
+      editUser: "Edit user",
+      deleteUser: "Delete user",
+      resetPassword: "Reset password",
+      setNewPasswordFor: "Set a new password for {name}.",
+      newPassword: "New password",
+      name: "Name",
+      email: "Email",
+      password: "Password",
+      position: "Position",
+      noPosition: "No position",
+      role: "Role",
+      employee: "Employee",
+      manager: "Manager",
+      userCreated: "User created successfully.",
+      userUpdated: "User updated successfully.",
+      userDeleted: "User deleted successfully.",
+      passwordUpdated: "Password updated successfully.",
+      errorLoadingReports: "Error loading reports",
+      errorLoadingUsers: "Error loading users",
+      errorCreatingUser: "Error creating user",
+      errorUpdatingUser: "Error updating user",
+      errorDeletingUser: "Error deleting user",
+      errorUpdatingPassword: "Error updating password",
+      errorUpdatingReport: "Error updating report status",
+      deleteUserConfirm: "Are you sure you want to delete this user?",
+      dailyReport: "Daily Report",
+      employeeLabel: "Employee",
+      thisUser: "this user",
+    },
+  },
+  ar: {
+    common: {
+      appName: "استوديو التقارير اليومية",
+      manager: "مدير",
+      employee: "موظف",
+      languageSwitch: "EN",
+      na: "غير متوفر",
+      cancel: "الغاء",
+      close: "اغلاق",
+      delete: "حذف",
+      saveChanges: "حفظ التغييرات",
+      updatePassword: "تحديث كلمة المرور",
+    },
+    login: {
+      signInAs: "تسجيل الدخول كـ",
+      email: "البريد الالكتروني",
+      password: "كلمة المرور",
+      login: "تسجيل الدخول",
+      roleMismatch: "الدور المحدد لا يطابق هذا الحساب.",
+      loginFailed: "فشل تسجيل الدخول",
+    },
+    register: {
+      title: "انشاء حساب",
+      confirmPassword: "تاكيد كلمة المرور",
+      submit: "تسجيل",
+      haveAccount: "لديك حساب بالفعل؟",
+      loginLink: "سجل الدخول",
+      passwordMismatch: "كلمتا المرور غير متطابقتين",
+      registrationFailed: "فشل التسجيل",
+    },
+    employee: {
+      welcomeBack: "اهلا بعودتك، {name}",
+      snapshotTitle: "ملخص اليوم",
+      snapshotSubtitle: "تابع تقاريرك وما تمت مراجعته.",
+      totalSubmitted: "اجمالي التقارير المرسلة",
+      checked: "تمت المراجعة",
+      pending: "قيد الانتظار",
+      submitTitle: "ارسال التقرير اليومي",
+      submitSubtitle: "اجعله واضحا وبسيطا وصادقا. ارفق اي ملفات داعمة.",
+      completedTasksLabel: "المهام المنجزة (مطلوب)",
+      completedTasksPlaceholder: "اذكر المهام التي اكملتها اليوم",
+      inProgressLabel: "مهام قيد التنفيذ",
+      inProgressPlaceholder: "ما الذي تعمل عليه حاليا؟",
+      commitmentsLabel: "الالتزامات",
+      commitmentsPlaceholder: "ما الذي تلتزم بإنجازه بعد ذلك؟",
+      challengesLabel: "التحديات",
+      challengesPlaceholder: "صف اي عوائق او تحديات",
+      attachFiles: "ارفاق ملفات",
+      filesSelected: "{count} ملف محدد",
+      noFilesSelected: "لا توجد ملفات",
+      multiFileHint: "يمكنك اختيار عدة ملفات وصور.",
+      submitReport: "ارسال التقرير",
+      yourReports: "تقاريرك",
+      yourReportsSubtitle: "تابع آخر تقاريرك وحالة المراجعة.",
+      reportSubmitted: "تم ارسال التقرير بنجاح!",
+      reportSubmitError: "حدث خطا اثناء ارسال التقرير",
+      reportDeleted: "تم حذف التقرير بنجاح!",
+      reportDeleteError: "حدث خطا اثناء حذف التقرير",
+      deleteReport: "حذف التقرير",
+      confirmDeleteTitle: "تأكيد الحذف",
+      confirmDeleteBody: "هل انت متأكد من حذف هذا التقرير؟",
+      reportDetails: "تفاصيل التقرير",
+      completedTasks: "المهام المنجزة",
+      inProgress: "مهام قيد التنفيذ",
+      commitments: "الالتزامات",
+      challenges: "التحديات",
+      checkedBy: "تمت المراجعة بواسطة",
+      approvalNotes: "ملاحظات الموافقة",
+      files: "الملفات",
+      noFilesAttached: "لا توجد ملفات مرفقة",
+      noTasks: "لا توجد مهام منجزة",
+      none: "لا يوجد",
+    },
+    manager: {
+      dailyReports: "التقارير اليومية",
+      dailyReportsSubtitle:
+        "راجع تحديثات اليوم، وحدد ما تمت مراجعته، واطبع عند الجاهزية.",
+      totalReports: "اجمالي التقارير",
+      reportsFor: "تقارير بتاريخ {date} ({shown} من {total})",
+      searchReports: "بحث في التقارير",
+      reportDetails: "تفاصيل التقرير",
+      tasks: "المهام",
+      struggles: "الصعوبات",
+      notes: "الملاحظات",
+      completedTasks: "المهام المنجزة",
+      inProgress: "مهام قيد التنفيذ",
+      commitments: "الالتزامات",
+      challenges: "التحديات",
+      checkedBy: "تمت المراجعة بواسطة",
+      approvalNotes: "ملاحظات الموافقة",
+      approvalNotesPlaceholder: "اضف ملاحظة لهذا التقرير",
+      markChecked: "تحديد كمراجع",
+      markUnchecked: "الغاء المراجعة",
+      files: "الملفات",
+      noTasks: "لا توجد مهام منجزة",
+      none: "لا يوجد",
+      noFilesAttached: "لا توجد ملفات مرفقة",
+      printReport: "طباعة التقرير",
+      userManagement: "ادارة المستخدمين",
+      userManagementTooltip: "ادارة المستخدمين",
+      userManagementHint: "عرض الحسابات وتعديلها وتهيئة كلمات المرور او حذفها.",
+      addUser: "اضافة مستخدم",
+      createUser: "انشاء مستخدم",
+      editUser: "تعديل المستخدم",
+      deleteUser: "حذف المستخدم",
+      resetPassword: "اعادة تعيين كلمة المرور",
+      setNewPasswordFor: "تعيين كلمة مرور جديدة لـ {name}.",
+      newPassword: "كلمة مرور جديدة",
+      name: "الاسم",
+      email: "البريد الالكتروني",
+      password: "كلمة المرور",
+      position: "المنصب",
+      noPosition: "بدون منصب",
+      role: "الدور",
+      employee: "موظف",
+      manager: "مدير",
+      userCreated: "تم انشاء المستخدم بنجاح.",
+      userUpdated: "تم تحديث المستخدم بنجاح.",
+      userDeleted: "تم حذف المستخدم بنجاح.",
+      passwordUpdated: "تم تحديث كلمة المرور بنجاح.",
+      errorLoadingReports: "حدث خطا اثناء تحميل التقارير",
+      errorLoadingUsers: "حدث خطا اثناء تحميل المستخدمين",
+      errorCreatingUser: "حدث خطا اثناء انشاء المستخدم",
+      errorUpdatingUser: "حدث خطا اثناء تحديث المستخدم",
+      errorDeletingUser: "حدث خطا اثناء حذف المستخدم",
+      errorUpdatingPassword: "حدث خطا اثناء تحديث كلمة المرور",
+      errorUpdatingReport: "حدث خطا اثناء تحديث حالة التقرير",
+      deleteUserConfirm: "هل انت متأكد من حذف هذا المستخدم؟",
+      dailyReport: "تقرير يومي",
+      employeeLabel: "الموظف",
+      thisUser: "هذا المستخدم",
+    },
+  },
+};
+
+const getValueByPath = (obj, path) =>
+  path.split(".").reduce((acc, key) => acc?.[key], obj);
+
+export function LanguageProvider({ children }) {
+  const [lang, setLang] = useState("en");
+  const direction = lang === "ar" ? "rtl" : "ltr";
+
+  useEffect(() => {
+    document.documentElement.dir = direction;
+    document.documentElement.lang = lang;
+    document.body.dir = direction;
+    document.body.style.direction = direction;
+    document.body.style.textAlign = direction === "rtl" ? "right" : "left";
+    document.body.style.overflowX = "hidden";
+  }, [direction, lang]);
+
+  const value = useMemo(() => {
+    const t = (key, params) => {
+      const text = getValueByPath(translations[lang], key) || key;
+      if (!params) {
+        return text;
+      }
+      return text.replace(/\{(\w+)\}/g, (_, param) => params[param] ?? "");
+    };
+
+    return {
+      lang,
+      direction,
+      setLang,
+      t,
+    };
+  }, [lang, direction]);
+
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within LanguageProvider");
+  }
+  return context;
+}
