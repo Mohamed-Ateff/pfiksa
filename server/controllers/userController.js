@@ -62,10 +62,10 @@ exports.updateUserPassword = async (req, res) => {
     const { userId } = req.params;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
+    if (!password || password.length < 4) {
       return res
         .status(400)
-        .json({ message: "Password must be at least 6 characters" });
+        .json({ message: "Password must be at least 4 characters" });
     }
 
     const user = await User.findById(userId).select("+password");

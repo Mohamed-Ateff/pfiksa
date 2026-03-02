@@ -32,6 +32,28 @@ app.use("/api/reports", require("./routes/reports"));
 app.use("/api/employees", require("./routes/employees"));
 app.use("/api/users", require("./routes/users"));
 
+// One-time setup endpoint — creates initial manager only if none exists
+app.get("/api/setup", async (req, res) => {
+  try {
+    const User = require("./models/User");
+    const existing = await User.findOne({ role: "manager" });
+    if (existing) {
+      return res.json({ message: "Setup already done. Manager already exists." });
+    }
+    const user = new User({
+      name: "Shahd",
+      email: "shahd@gmail.com",
+      password: "Shahd$",
+      role: "manager",
+      position: "Manager",
+    });
+    await user.save();
+    res.json({ message: "✅ Manager created: shahd@gmail.com / Shahd$" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Serve React build in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));

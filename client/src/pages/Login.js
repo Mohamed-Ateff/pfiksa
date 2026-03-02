@@ -29,11 +29,10 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("employee");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
   const { lang, setLang, t } = useLanguage();
   const isRtl = lang === "ar";
 
@@ -44,11 +43,6 @@ function Login() {
     try {
       const response = await authService.login(email, password);
       const { token, user } = response.data;
-      if (user.role !== role) {
-        logout();
-        setError(t("login.roleMismatch"));
-        return;
-      }
       login(user, token);
       navigate(
         user.role === "manager" ? "/manager-dashboard" : "/employee-dashboard",
@@ -155,61 +149,6 @@ function Login() {
                 mb: 2,
               }}
             >
-              {/* Removed 'Sign in as' label as requested */}
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: 2,
-                  justifyContent: "center",
-                  width: "100%",
-                }}
-              >
-                <Button
-                  variant={role === "employee" ? "contained" : "outlined"}
-                  onClick={() => setRole("employee")}
-                  sx={{
-                    flex: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    background: role === "employee" ? "#118dd3" : "none",
-                    color: role === "employee" ? "#fff" : "#cfd3ff",
-                    borderColor: "#118dd3",
-                    boxShadow:
-                      role === "employee" ? "0 4px 16px #118dd333" : "none",
-                    "&:hover": {
-                      background:
-                        role === "employee"
-                          ? "#0e6fa0"
-                          : "rgba(17, 141, 211, 0.08)",
-                    },
-                  }}
-                >
-                  {t("common.employee")}
-                </Button>
-                <Button
-                  variant={role === "manager" ? "contained" : "outlined"}
-                  onClick={() => setRole("manager")}
-                  sx={{
-                    flex: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    background: role === "manager" ? "#f2b45e" : "none",
-                    color: role === "manager" ? "#181b2f" : "#cfd3ff",
-                    borderColor: "#f2b45e",
-                    boxShadow:
-                      role === "manager" ? "0 4px 16px #f2b45e33" : "none",
-                    "&:hover": {
-                      background:
-                        role === "manager"
-                          ? "#d99a2b"
-                          : "rgba(242, 180, 94, 0.08)",
-                    },
-                  }}
-                >
-                  {t("common.manager")}
-                </Button>
-              </Box>
             </Box>
             <TextField
               fullWidth
