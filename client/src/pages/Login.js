@@ -220,7 +220,7 @@ function Login() {
               margin="normal"
               required
               autoComplete="off"
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               InputProps={{
                 sx: {
                   color: "#e9edff",
@@ -244,7 +244,7 @@ function Login() {
               margin="normal"
               required
               autoComplete="new-password"
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               InputProps={{
                 sx: {
                   color: "#e9edff",
