@@ -147,7 +147,7 @@ function Login() {
               {error}
             </Alert>
           )}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} autoComplete="off">
             <Box
               sx={{
                 display: "flex",
@@ -220,6 +220,7 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
+              autoComplete="off"
               InputProps={{
                 sx: {
                   color: "#e9edff",
@@ -242,6 +243,7 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              autoComplete="new-password"
               InputProps={{
                 sx: {
                   color: "#e9edff",

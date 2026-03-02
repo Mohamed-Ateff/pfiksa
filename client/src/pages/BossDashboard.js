@@ -78,7 +78,7 @@ function ManagerDashboard() {
   const [printReport, setPrintReport] = useState(null);
   const printRef = useRef();
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { logout, user, updateUser } = useAuth();
   const { lang, setLang, t } = useLanguage();
   const isRtl = lang === "ar";
   const getInitials = (name) => {
@@ -211,6 +211,15 @@ function ManagerDashboard() {
         role: editForm.role,
         position: editForm.position,
       });
+      // If the edited user is the currently logged-in user, update the header too
+      if (user && (user.id === editForm.id || user._id === editForm.id)) {
+        updateUser({
+          name: editForm.name,
+          email: editForm.email,
+          role: editForm.role,
+          position: editForm.position,
+        });
+      }
       setSuccess(t("manager.userUpdated"));
       setEditOpen(false);
       fetchUsers();
