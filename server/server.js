@@ -38,7 +38,9 @@ app.get("/api/setup", async (req, res) => {
     const User = require("./models/User");
     const existing = await User.findOne({ role: "manager" });
     if (existing) {
-      return res.json({ message: "Setup already done. Manager already exists." });
+      return res.json({
+        message: "Setup already done. Manager already exists.",
+      });
     }
     const user = new User({
       name: "Shahd",

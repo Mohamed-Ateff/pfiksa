@@ -148,8 +148,7 @@ function Login() {
                 alignItems: "center",
                 mb: 2,
               }}
-            >
-            </Box>
+            ></Box>
             <TextField
               fullWidth
               placeholder={t("login.email")}
