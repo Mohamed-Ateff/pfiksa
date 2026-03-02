@@ -37,8 +37,7 @@ function Login() {
   const { lang, setLang, t } = useLanguage();
   const isRtl = lang === "ar";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setError("");
     setLoading(true);
 
@@ -147,7 +146,7 @@ function Login() {
               {error}
             </Alert>
           )}
-          <form onSubmit={handleSubmit} autoComplete="off">
+          <Box>
             <Box
               sx={{
                 display: "flex",
@@ -221,6 +220,7 @@ function Login() {
               margin="normal"
               required
               autoComplete="off"
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               InputProps={{
                 sx: {
                   color: "#e9edff",
@@ -244,6 +244,7 @@ function Login() {
               margin="normal"
               required
               autoComplete="new-password"
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               InputProps={{
                 sx: {
                   color: "#e9edff",
@@ -271,9 +272,10 @@ function Login() {
               }}
             />
             <Button
-              type="submit"
+              type="button"
               fullWidth
               variant="contained"
+              onClick={handleSubmit}
               sx={{
                 mt: 3,
                 mb: 1.5,
@@ -314,7 +316,7 @@ function Login() {
             >
               العربية
             </Button>
-          </form>
+          </Box>
         </Paper>
       </Container>
     </Box>
