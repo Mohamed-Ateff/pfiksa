@@ -11,16 +11,19 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ManagerDashboard from "./pages/BossDashboard";
 import { useAuth } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
+import { useThemeMode } from "./context/ThemeContext";
 
 function App() {
   const { isAuthenticated, user } = useAuth();
   const { direction } = useLanguage();
+  const { mode } = useThemeMode();
+
   const theme = useMemo(
     () =>
       createTheme({
         direction,
         palette: {
-          mode: "dark",
+          mode,
           primary: {
             main: "#118dd3",
           },
@@ -28,14 +31,14 @@ function App() {
             main: "#71c8f2",
           },
           background: {
-            default: "#121421",
-            paper: "#181b2f",
+            default: mode === "dark" ? "#121421" : "#f5f7fa",
+            paper: mode === "dark" ? "#181b2f" : "#ffffff",
           },
           text: {
-            primary: "#ffffff",
-            secondary: "#c7cbe4",
+            primary: mode === "dark" ? "#ffffff" : "#1a1a2e",
+            secondary: mode === "dark" ? "#c7cbe4" : "#5a5a7a",
           },
-          divider: "#2a2f4f",
+          divider: mode === "dark" ? "#2a2f4f" : "#e0e0e0",
         },
         typography: {
           fontFamily:
@@ -69,34 +72,58 @@ function App() {
         components: {
           MuiCssBaseline: {
             styleOverrides: {
+              "*": {
+                boxSizing: "border-box",
+              },
+              html: {
+                WebkitTextSizeAdjust: "100%",
+              },
               body: {
-                backgroundColor: "#121421",
+                backgroundColor: mode === "dark" ? "#121421" : "#f5f7fa",
                 direction,
                 textAlign: direction === "rtl" ? "right" : "left",
                 overflowX: "hidden",
+                minHeight: "100vh",
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale",
               },
               "#root": {
                 direction,
                 textAlign: direction === "rtl" ? "right" : "left",
                 overflowX: "hidden",
+                minHeight: "100vh",
+              },
+              // Improve touch targets on mobile
+              "button, [role='button'], input, select, textarea": {
+                touchAction: "manipulation",
+              },
+              // Better scrolling on mobile
+              "@media (max-width: 600px)": {
+                ".MuiContainer-root": {
+                  paddingLeft: "12px !important",
+                  paddingRight: "12px !important",
+                },
               },
             },
           },
           MuiAppBar: {
             styleOverrides: {
               root: {
-                background: "#121421",
-                color: "#ffffff",
+                background: mode === "dark" ? "#121421" : "#ffffff",
+                color: mode === "dark" ? "#ffffff" : "#1a1a2e",
                 boxShadow: "none",
-                borderBottom: "1px solid #1f2342",
+                borderBottom:
+                  mode === "dark" ? "1px solid #1f2342" : "1px solid #e0e0e0",
               },
             },
           },
           MuiPaper: {
             styleOverrides: {
               root: {
-                border: "1px solid #2a2f4f",
-                boxShadow: "none",
+                border:
+                  mode === "dark" ? "1px solid #2a2f4f" : "1px solid #e0e0e0",
+                boxShadow:
+                  mode === "dark" ? "none" : "0 2px 8px rgba(0,0,0,0.08)",
               },
             },
           },
@@ -121,11 +148,11 @@ function App() {
           MuiOutlinedInput: {
             styleOverrides: {
               root: {
-                backgroundColor: "#0d0f1c",
+                backgroundColor: mode === "dark" ? "#0d0f1c" : "#ffffff",
                 borderRadius: 0,
               },
               notchedOutline: {
-                borderColor: "#2a2f4f",
+                borderColor: mode === "dark" ? "#2a2f4f" : "#d0d0d0",
               },
             },
           },
@@ -138,7 +165,7 @@ function App() {
           },
         },
       }),
-    [direction],
+    [direction, mode],
   );
 
   return (

@@ -20,6 +20,7 @@ import {
 import { authService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useThemeMode } from "../context/ThemeContext";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
@@ -35,6 +36,7 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { lang, setLang, t } = useLanguage();
+  const { mode, isDark } = useThemeMode();
   const isRtl = lang === "ar";
 
   const handleSubmit = async () => {
@@ -61,12 +63,14 @@ function Login() {
         minHeight: "100vh",
         width: "100vw",
         position: "relative",
-        color: "#e9edff",
+        color: isDark ? "#e9edff" : "#1a1a2e",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
-        background: "linear-gradient(135deg, #10131e 0%, #181b2f 100%)",
+        background: isDark
+          ? "linear-gradient(135deg, #10131e 0%, #181b2f 100%)"
+          : "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
         direction: isRtl ? "rtl" : "ltr",
       }}
     >
@@ -74,10 +78,10 @@ function Login() {
       <Box
         sx={{
           position: "absolute",
-          top: -120,
-          left: -120,
-          width: 400,
-          height: 400,
+          top: { xs: -80, md: -120 },
+          left: { xs: -80, md: -120 },
+          width: { xs: 250, md: 400 },
+          height: { xs: 250, md: 400 },
           borderRadius: "50%",
           background: "radial-gradient(circle, #118dd3 0%, transparent 70%)",
           opacity: 0.18,
@@ -88,10 +92,10 @@ function Login() {
       <Box
         sx={{
           position: "absolute",
-          bottom: -160,
-          right: -140,
-          width: 500,
-          height: 500,
+          bottom: { xs: -100, md: -160 },
+          right: { xs: -100, md: -140 },
+          width: { xs: 300, md: 500 },
+          height: { xs: 300, md: 500 },
           borderRadius: "50%",
           background: "radial-gradient(circle, #f2b45e 0%, transparent 70%)",
           opacity: 0.13,
@@ -99,19 +103,27 @@ function Login() {
           zIndex: 0,
         }}
       />
-      <Container maxWidth="sm" sx={{ py: 8 }}>
+      <Container
+        maxWidth="sm"
+        sx={{ py: { xs: 2, sm: 4, md: 8 }, px: { xs: 2, sm: 3 } }}
+      >
         <Paper
           sx={{
-            p: { xs: 4, md: 6 },
+            p: { xs: 2.5, sm: 4, md: 6 },
             borderRadius: 0,
             maxWidth: 440,
             mx: "auto",
-            background:
-              "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)",
-            border: "1px solid rgba(17, 141, 211, 0.25)",
-            boxShadow: "0 18px 40px rgba(5, 8, 20, 0.55)",
+            background: isDark
+              ? "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)"
+              : "linear-gradient(130deg, rgba(17, 141, 211, 0.08), rgba(255, 255, 255, 0.98) 60%)",
+            border: isDark
+              ? "1px solid rgba(17, 141, 211, 0.25)"
+              : "1px solid rgba(17, 141, 211, 0.15)",
+            boxShadow: isDark
+              ? "0 18px 40px rgba(5, 8, 20, 0.55)"
+              : "0 4px 24px rgba(0, 0, 0, 0.1)",
             backdropFilter: "blur(6px)",
-            color: "#e9edff",
+            color: isDark ? "#e9edff" : "#1a1a2e",
           }}
         >
           <Box
@@ -119,16 +131,16 @@ function Login() {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              mb: 6,
+              mb: { xs: 3, sm: 4, md: 6 },
               width: "100%",
             }}
           >
             <Box
               component="img"
-              src="/logo.png"
+              src={isDark ? "/logo.png" : "/logo-white.png"}
               alt="Logo"
               sx={{
-                width: 200,
+                width: { xs: 140, sm: 170, md: 200 },
                 height: "auto",
                 objectFit: "contain",
                 display: "block",
@@ -154,7 +166,7 @@ function Login() {
                 sx={{
                   display: "flex",
                   flexDirection: "row",
-                  gap: 2,
+                  gap: { xs: 1, sm: 2 },
                   justifyContent: "center",
                   width: "100%",
                 }}
@@ -166,8 +178,15 @@ function Login() {
                     flex: 1,
                     borderRadius: 2,
                     fontWeight: 600,
+                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                    py: { xs: 1, sm: 1.2 },
                     background: role === "employee" ? "#118dd3" : "none",
-                    color: role === "employee" ? "#fff" : "#cfd3ff",
+                    color:
+                      role === "employee"
+                        ? "#fff"
+                        : isDark
+                          ? "#cfd3ff"
+                          : "#5a5a7a",
                     borderColor: "#118dd3",
                     boxShadow:
                       role === "employee" ? "0 4px 16px #118dd333" : "none",
@@ -188,8 +207,15 @@ function Login() {
                     flex: 1,
                     borderRadius: 2,
                     fontWeight: 600,
+                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                    py: { xs: 1, sm: 1.2 },
                     background: role === "manager" ? "#f2b45e" : "none",
-                    color: role === "manager" ? "#181b2f" : "#cfd3ff",
+                    color:
+                      role === "manager"
+                        ? "#181b2f"
+                        : isDark
+                          ? "#cfd3ff"
+                          : "#5a5a7a",
                     borderColor: "#f2b45e",
                     boxShadow:
                       role === "manager" ? "0 4px 16px #f2b45e33" : "none",
@@ -217,13 +243,13 @@ function Login() {
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               InputProps={{
                 sx: {
-                  color: "#e9edff",
-                  backgroundColor: "#0d0f1c",
+                  color: isDark ? "#e9edff" : "#1a1a2e",
+                  backgroundColor: isDark ? "#0d0f1c" : "#ffffff",
                   borderRadius: 0,
                   direction: isRtl ? "rtl" : "ltr",
                   textAlign: isRtl ? "right" : "left",
                   "::placeholder": {
-                    color: "#cfd3ff",
+                    color: isDark ? "#cfd3ff" : "#9a9a9a",
                     opacity: 1,
                   },
                 },
@@ -241,13 +267,13 @@ function Login() {
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               InputProps={{
                 sx: {
-                  color: "#e9edff",
-                  backgroundColor: "#0d0f1c",
+                  color: isDark ? "#e9edff" : "#1a1a2e",
+                  backgroundColor: isDark ? "#0d0f1c" : "#ffffff",
                   borderRadius: 0,
                   direction: isRtl ? "rtl" : "ltr",
                   textAlign: isRtl ? "right" : "left",
                   "::placeholder": {
-                    color: "#cfd3ff",
+                    color: isDark ? "#cfd3ff" : "#9a9a9a",
                     opacity: 1,
                   },
                 },
@@ -256,7 +282,11 @@ function Login() {
                     <Button
                       onClick={() => setShowPassword((show) => !show)}
                       onMouseDown={(e) => e.preventDefault()}
-                      sx={{ minWidth: 0, color: "#cfd3ff", p: 0.5 }}
+                      sx={{
+                        minWidth: 0,
+                        color: isDark ? "#cfd3ff" : "#5a5a7a",
+                        p: 0.5,
+                      }}
                       tabIndex={-1}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}

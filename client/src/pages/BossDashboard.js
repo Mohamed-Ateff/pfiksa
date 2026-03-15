@@ -31,11 +31,14 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import EditIcon from "@mui/icons-material/Edit";
 import KeyIcon from "@mui/icons-material/Key";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
 import { useReactToPrint } from "react-to-print";
 import { useNavigate } from "react-router-dom";
 import { reportService, authService, userService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useThemeMode } from "../context/ThemeContext";
 
 function ManagerDashboard() {
   const [reports, setReports] = useState([]);
@@ -80,6 +83,7 @@ function ManagerDashboard() {
   const navigate = useNavigate();
   const { logout, user, updateUser } = useAuth();
   const { lang, setLang, t } = useLanguage();
+  const { mode, toggleTheme, isDark } = useThemeMode();
   const isRtl = lang === "ar";
   const getInitials = (name) => {
     if (!name) {
@@ -309,9 +313,10 @@ function ManagerDashboard() {
         position: "relative",
         minHeight: "100vh",
         overflow: "hidden",
-        background:
-          "radial-gradient(circle at top, rgba(17, 141, 211, 0.2), transparent 45%), linear-gradient(180deg, #0b0f1f 0%, #121421 55%, #0f1324 100%)",
-        color: "#e9edff",
+        background: isDark
+          ? "radial-gradient(circle at top, rgba(17, 141, 211, 0.2), transparent 45%), linear-gradient(180deg, #0b0f1f 0%, #121421 55%, #0f1324 100%)"
+          : "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 55%, #e2e8f0 100%)",
+        color: isDark ? "#e9edff" : "#1a1a2e",
       }}
     >
       <Box
@@ -347,17 +352,23 @@ function ManagerDashboard() {
               sx={{
                 p: { xs: 1.5, md: 2 },
                 borderRadius: 0,
-                background:
-                  "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)",
-                border: "1px solid rgba(17, 141, 211, 0.25)",
-                boxShadow: "0 18px 40px rgba(5, 8, 20, 0.55)",
+                background: isDark
+                  ? "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)"
+                  : "linear-gradient(130deg, rgba(17, 141, 211, 0.08), rgba(255, 255, 255, 0.98) 60%)",
+                border: isDark
+                  ? "1px solid rgba(17, 141, 211, 0.25)"
+                  : "1px solid rgba(17, 141, 211, 0.15)",
+                boxShadow: isDark
+                  ? "0 18px 40px rgba(5, 8, 20, 0.55)"
+                  : "0 4px 20px rgba(0, 0, 0, 0.08)",
                 backdropFilter: "blur(6px)",
               }}
             >
               <Box
                 sx={{
                   display: "flex",
-                  alignItems: "center",
+                  flexDirection: { xs: "column", sm: "row" },
+                  alignItems: { xs: "flex-start", sm: "center" },
                   gap: 2,
                 }}
               >
@@ -367,73 +378,131 @@ function ManagerDashboard() {
                     alignItems: "center",
                     gap: 2,
                     flexGrow: 1,
+                    width: { xs: "100%", sm: "auto" },
                   }}
                 >
                   <Box
                     component="img"
-                    src="/logo.png"
+                    src={isDark ? "/logo.png" : "/logo-white.png"}
                     alt="Logo"
-                    sx={{ height: 52, width: "auto", objectFit: "contain" }}
+                    sx={{
+                      height: { xs: 40, sm: 52 },
+                      width: "auto",
+                      objectFit: "contain",
+                    }}
                   />
-                  <Box>
+                  <Box sx={{ flexGrow: 1 }}>
                     <Typography
                       variant="h6"
                       color="primary"
-                      sx={{ fontWeight: 700, letterSpacing: "0.01em" }}
+                      sx={{
+                        fontWeight: 700,
+                        letterSpacing: "0.01em",
+                        fontSize: { xs: "1rem", sm: "1.25rem" },
+                      }}
                     >
                       {user?.name || t("common.manager")}
                     </Typography>
-                    <Typography variant="body2" color="#7f86b0">
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        color: isDark ? "#7f86b0" : "#5a5a7a",
+                      }}
+                    >
                       {user?.position || t("common.manager")}
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    width: { xs: "100%", sm: "auto" },
+                    justifyContent: { xs: "flex-start", sm: "flex-end" },
+                    flexWrap: "wrap",
+                  }}
+                >
                   <Button
                     size="small"
                     onClick={() => setLang(lang === "en" ? "ar" : "en")}
                     sx={{
-                      minWidth: 44,
-                      height: 44,
+                      minWidth: { xs: 38, sm: 44 },
+                      height: { xs: 38, sm: 44 },
                       px: 1.25,
                       borderRadius: "999px",
                       lineHeight: 1,
                       color: "#ffffff",
                       border: "1px solid #118dd3",
                       backgroundColor: "#118dd3",
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
                       "&:hover": { backgroundColor: "#0f7fbf" },
                     }}
                   >
                     {t("common.languageSwitch")}
                   </Button>
+                  <IconButton
+                    onClick={toggleTheme}
+                    sx={{
+                      width: { xs: 38, sm: 44 },
+                      height: { xs: 38, sm: 44 },
+                      color: isDark ? "#f2b45e" : "#118dd3",
+                      border: isDark
+                        ? "1px solid #f2b45e"
+                        : "1px solid #118dd3",
+                      backgroundColor: isDark
+                        ? "rgba(242, 180, 94, 0.1)"
+                        : "rgba(17, 141, 211, 0.1)",
+                      "&:hover": {
+                        backgroundColor: isDark
+                          ? "rgba(242, 180, 94, 0.2)"
+                          : "rgba(17, 141, 211, 0.2)",
+                      },
+                    }}
+                  >
+                    {isDark ? (
+                      <LightModeIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                    ) : (
+                      <DarkModeIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                    )}
+                  </IconButton>
                   <Tooltip title={t("manager.userManagementTooltip")}>
                     <IconButton
                       onClick={() => setUsersOpen(true)}
                       sx={{
-                        width: 44,
-                        height: 44,
-                        color: "#ffffff",
-                        border: "1px solid #2a2f4f",
-                        backgroundColor: "#121421",
-                        "&:hover": { backgroundColor: "#1f2440" },
+                        width: { xs: 38, sm: 44 },
+                        height: { xs: 38, sm: 44 },
+                        color: isDark ? "#ffffff" : "#333333",
+                        border: isDark
+                          ? "1px solid #2a2f4f"
+                          : "1px solid #cccccc",
+                        backgroundColor: isDark ? "#121421" : "#f5f5f5",
+                        "&:hover": {
+                          backgroundColor: isDark ? "#1f2440" : "#e0e0e0",
+                        },
                         mr: 0,
                       }}
                     >
-                      <PeopleAltIcon />
+                      <PeopleAltIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
                     </IconButton>
                   </Tooltip>
                   <IconButton
                     onClick={handleLogout}
                     sx={{
-                      width: 44,
-                      height: 44,
-                      color: "#ffffff",
-                      border: "1px solid #2a2f4f",
-                      backgroundColor: "#121421",
-                      "&:hover": { backgroundColor: "#1f2440" },
+                      width: { xs: 38, sm: 44 },
+                      height: { xs: 38, sm: 44 },
+                      color: isDark ? "#ffffff" : "#333333",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #cccccc",
+                      backgroundColor: isDark ? "#121421" : "#f5f5f5",
+                      "&:hover": {
+                        backgroundColor: isDark ? "#1f2440" : "#e0e0e0",
+                      },
                     }}
                   >
-                    <LogoutIcon />
+                    <LogoutIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
                   </IconButton>
                 </Box>
               </Box>
@@ -441,7 +510,10 @@ function ManagerDashboard() {
           </Container>
         </Box>
 
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container
+          maxWidth="lg"
+          sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}
+        >
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -460,24 +532,39 @@ function ManagerDashboard() {
               mb: 3,
               position: "relative",
               overflow: "hidden",
-              background:
-                "linear-gradient(135deg, rgba(17, 141, 211, 0.14) 0%, rgba(18, 20, 33, 0.85) 55%, rgba(15, 19, 36, 0.95) 100%)",
-              border: "1px solid rgba(17, 141, 211, 0.3)",
-              boxShadow: "0 20px 40px rgba(7, 10, 24, 0.6)",
+              background: isDark
+                ? "linear-gradient(135deg, rgba(17, 141, 211, 0.14) 0%, rgba(18, 20, 33, 0.85) 55%, rgba(15, 19, 36, 0.95) 100%)"
+                : "linear-gradient(135deg, rgba(17, 141, 211, 0.06) 0%, rgba(255, 255, 255, 0.95) 55%, rgba(248, 250, 252, 1) 100%)",
+              border: isDark
+                ? "1px solid rgba(17, 141, 211, 0.3)"
+                : "1px solid rgba(17, 141, 211, 0.15)",
+              boxShadow: isDark
+                ? "0 20px 40px rgba(7, 10, 24, 0.6)"
+                : "0 4px 20px rgba(0, 0, 0, 0.06)",
             }}
           >
             <Stack
               direction={{ xs: "column", md: "row" }}
               spacing={2}
-              alignItems={{ xs: "flex-start", md: "center" }}
+              alignItems={{ xs: "stretch", md: "center" }}
               justifyContent="space-between"
               sx={{ mb: 2 }}
             >
               <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                  }}
+                >
                   {t("manager.dailyReports")}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                >
                   {t("manager.dailyReportsSubtitle")}
                 </Typography>
               </Box>
@@ -490,12 +577,13 @@ function ManagerDashboard() {
                   dir: isRtl ? "rtl" : "ltr",
                 }}
                 sx={{
-                  maxWidth: 220,
+                  maxWidth: { xs: "100%", sm: 220 },
+                  width: { xs: "100%", sm: "auto" },
                   "& input": {
                     textAlign: isRtl ? "right" : "left",
                   },
                   "& input::-webkit-calendar-picker-indicator": {
-                    filter: "invert(1)",
+                    filter: isDark ? "invert(1)" : "none",
                     opacity: 0.9,
                   },
                 }}
@@ -503,56 +591,99 @@ function ManagerDashboard() {
             </Stack>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <Box
                   sx={{
-                    p: 2,
-                    border: "1px solid rgba(17, 141, 211, 0.2)",
-                    background:
-                      "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02)",
+                    p: { xs: 1.5, sm: 2 },
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.2)"
+                      : "1px solid rgba(17, 141, 211, 0.15)",
+                    background: isDark
+                      ? "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))"
+                      : "linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(17, 141, 211, 0.05))",
+                    boxShadow: isDark
+                      ? "inset 0 0 0 1px rgba(255, 255, 255, 0.02)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.7rem", sm: "0.875rem" } }}
+                  >
                     {t("manager.totalReports")}
                   </Typography>
-                  <Typography variant="h4" sx={{ color: "#118dd3" }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      color: "#118dd3",
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
                     {reports.length}
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <Box
                   sx={{
-                    p: 2,
-                    border: "1px solid rgba(17, 141, 211, 0.2)",
-                    background:
-                      "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02)",
+                    p: { xs: 1.5, sm: 2 },
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.2)"
+                      : "1px solid rgba(17, 141, 211, 0.15)",
+                    background: isDark
+                      ? "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))"
+                      : "linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(17, 141, 211, 0.05))",
+                    boxShadow: isDark
+                      ? "inset 0 0 0 1px rgba(255, 255, 255, 0.02)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.7rem", sm: "0.875rem" } }}
+                  >
                     {t("employee.checked")}
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
                     {reports.filter((report) => report.isChecked).length}
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} sm={12} md={4}>
                 <Box
                   sx={{
-                    p: 2,
-                    border: "1px solid rgba(17, 141, 211, 0.2)",
-                    background:
-                      "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02)",
+                    p: { xs: 1.5, sm: 2 },
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.2)"
+                      : "1px solid rgba(17, 141, 211, 0.15)",
+                    background: isDark
+                      ? "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))"
+                      : "linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(17, 141, 211, 0.05))",
+                    boxShadow: isDark
+                      ? "inset 0 0 0 1px rgba(255, 255, 255, 0.02)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.7rem", sm: "0.875rem" } }}
+                  >
                     {t("employee.pending")}
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
                     {reports.filter((report) => !report.isChecked).length}
                   </Typography>
                 </Box>
@@ -571,19 +702,28 @@ function ManagerDashboard() {
                   p: { xs: 2, md: 2.5 },
                   mb: 2,
                   borderRadius: 0,
-                  backgroundColor: "rgba(18, 20, 33, 0.75)",
-                  border: "1px solid rgba(42, 47, 79, 0.9)",
-                  boxShadow: "0 16px 30px rgba(5, 8, 20, 0.45)",
+                  backgroundColor: isDark
+                    ? "rgba(18, 20, 33, 0.75)"
+                    : "rgba(255, 255, 255, 0.95)",
+                  border: isDark
+                    ? "1px solid rgba(42, 47, 79, 0.9)"
+                    : "1px solid #e0e0e0",
+                  boxShadow: isDark
+                    ? "0 16px 30px rgba(5, 8, 20, 0.45)"
+                    : "0 4px 16px rgba(0, 0, 0, 0.06)",
                   backdropFilter: "blur(10px)",
                 }}
               >
                 <Stack
-                  direction={{ xs: "column", md: "row" }}
+                  direction={{ xs: "column", sm: "row" }}
                   spacing={2}
-                  alignItems={{ xs: "flex-start", md: "center" }}
+                  alignItems={{ xs: "stretch", sm: "center" }}
                   justifyContent="space-between"
                 >
-                  <Typography variant="h6">
+                  <Typography
+                    variant="h6"
+                    sx={{ fontSize: { xs: "0.95rem", sm: "1.25rem" } }}
+                  >
                     {t("manager.reportsFor", {
                       date: selectedDate,
                       shown: filteredReports.length,
@@ -597,11 +737,13 @@ function ManagerDashboard() {
                     size="small"
                     inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
                     sx={{
-                      minWidth: 240,
-                      backgroundColor: "#0f1325",
+                      minWidth: { xs: "100%", sm: 240 },
+                      backgroundColor: isDark ? "#0f1325" : "#ffffff",
                       borderRadius: 1,
                       "& fieldset": {
-                        borderColor: "rgba(17, 141, 211, 0.25)",
+                        borderColor: isDark
+                          ? "rgba(17, 141, 211, 0.25)"
+                          : "#d0d0d0",
                       },
                       "& input": {
                         textAlign: isRtl ? "right" : "left",
@@ -612,7 +754,7 @@ function ManagerDashboard() {
               </Paper>
               <Grid container spacing={2}>
                 {filteredReports.map((report) => (
-                  <Grid item xs={12} md={4} key={report._id}>
+                  <Grid item xs={12} sm={6} md={4} key={report._id}>
                     <Paper
                       onClick={() => handleOpenReport(report)}
                       sx={{
@@ -620,10 +762,15 @@ function ManagerDashboard() {
                         borderRadius: 0,
                         cursor: "pointer",
                         height: "100%",
-                        background:
-                          "linear-gradient(160deg, rgba(18, 20, 33, 0.95) 0%, rgba(17, 141, 211, 0.1) 100%)",
-                        border: "1px solid rgba(42, 47, 79, 0.9)",
-                        boxShadow: "0 14px 28px rgba(4, 6, 18, 0.5)",
+                        background: isDark
+                          ? "linear-gradient(160deg, rgba(18, 20, 33, 0.95) 0%, rgba(17, 141, 211, 0.1) 100%)"
+                          : "linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(17, 141, 211, 0.05) 100%)",
+                        border: isDark
+                          ? "1px solid rgba(42, 47, 79, 0.9)"
+                          : "1px solid #e0e0e0",
+                        boxShadow: isDark
+                          ? "0 14px 28px rgba(4, 6, 18, 0.5)"
+                          : "0 4px 16px rgba(0, 0, 0, 0.06)",
                         transition:
                           "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
                         "&:hover": {
@@ -687,10 +834,14 @@ function ManagerDashboard() {
                               handlePrintReport(report);
                             }}
                             sx={{
-                              color: "#ffffff",
-                              border: "1px solid #2a2f4f",
-                              backgroundColor: "#121421",
-                              "&:hover": { backgroundColor: "#1f2440" },
+                              color: isDark ? "#ffffff" : "#333333",
+                              border: isDark
+                                ? "1px solid #2a2f4f"
+                                : "1px solid #d0d0d0",
+                              backgroundColor: isDark ? "#121421" : "#f5f5f5",
+                              "&:hover": {
+                                backgroundColor: isDark ? "#1f2440" : "#e0e0e0",
+                              },
                             }}
                             title={t("manager.printReport")}
                           >
@@ -864,8 +1015,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#181b2f",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#181b2f" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -890,8 +1043,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -909,8 +1064,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -926,8 +1083,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -945,8 +1104,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -964,8 +1125,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -1001,8 +1164,10 @@ function ManagerDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -1047,22 +1212,32 @@ function ManagerDashboard() {
             onClose={() => setUsersOpen(false)}
             fullWidth
             maxWidth="lg"
+            PaperProps={{
+              sx: {
+                m: { xs: 1, sm: 2 },
+                maxHeight: { xs: "calc(100% - 16px)", sm: "calc(100% - 64px)" },
+              },
+            }}
           >
             <DialogTitle
               sx={{
-                background:
-                  "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)",
-                color: "#e9edff",
+                background: isDark
+                  ? "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)"
+                  : "linear-gradient(130deg, rgba(17, 141, 211, 0.08), rgba(255, 255, 255, 0.98) 60%)",
+                color: isDark ? "#e9edff" : "#1a1a2e",
                 fontWeight: 700,
-                fontSize: 24,
+                fontSize: { xs: 18, sm: 24 },
                 letterSpacing: 1,
                 mb: 0,
-                p: 2.5,
-                borderBottom: "1px solid rgba(17, 141, 211, 0.25)",
+                p: { xs: 1.5, sm: 2.5 },
+                borderBottom: isDark
+                  ? "1px solid rgba(17, 141, 211, 0.25)"
+                  : "1px solid rgba(17, 141, 211, 0.15)",
                 display: "flex",
-                alignItems: "center",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
                 justifyContent: "space-between",
-                gap: 2,
+                gap: { xs: 1.5, sm: 2 },
               }}
             >
               <span>{t("manager.userManagement")}</span>
@@ -1071,19 +1246,24 @@ function ManagerDashboard() {
                 startIcon={<PersonAddAltIcon />}
                 onClick={() => setCreateOpen(true)}
                 sx={{
-                  px: 3,
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 1, sm: 1.2 },
                   borderRadius: 999,
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: { xs: 14, sm: 16 },
                   background:
                     "linear-gradient(90deg, #0fc1d3 0%, #118dd3 100%)",
-                  ml: 2,
+                  ml: { xs: 0, sm: 2 },
+                  width: { xs: "100%", sm: "auto" },
                 }}
               >
                 {t("manager.addUser")}
               </Button>
             </DialogTitle>
-            <DialogContent dividers sx={{ background: "#181b2f" }}>
+            <DialogContent
+              dividers
+              sx={{ background: isDark ? "#181b2f" : "#f5f7fa" }}
+            >
               {usersLoading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
                   <CircularProgress size={24} />
@@ -1104,114 +1284,162 @@ function ManagerDashboard() {
                     <Grid item xs={12} sm={6} md={6} key={userItem._id}>
                       <Paper
                         sx={{
-                          p: 2,
+                          p: { xs: 1.5, sm: 2 },
                           borderRadius: 2,
-                          backgroundColor: "#181b2f",
-                          border: "1px solid #2a2f4f",
+                          backgroundColor: isDark ? "#181b2f" : "#ffffff",
+                          border: isDark
+                            ? "1px solid #2a2f4f"
+                            : "1px solid #e0e0e0",
                           height: "100%",
-                          boxShadow: "0 2px 12px #10131e33",
+                          boxShadow: isDark
+                            ? "0 2px 12px #10131e33"
+                            : "0 2px 12px rgba(0,0,0,0.08)",
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "space-between",
                         }}
                       >
                         <Stack
-                          direction="row"
-                          spacing={2}
-                          alignItems="center"
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={{ xs: 1.5, sm: 2 }}
+                          alignItems={{ xs: "flex-start", sm: "center" }}
                           justifyContent="space-between"
                         >
-                          <Box
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: "50%",
-                              backgroundColor: "#118dd3",
-                              color: "#fff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: 700,
-                              fontSize: 20,
-                              letterSpacing: "0.02em",
-                            }}
-                          >
-                            {getInitials(userItem.name)}
-                          </Box>
-                          <Box sx={{ flexGrow: 1, ml: 1 }}>
-                            <Typography
-                              variant="subtitle1"
-                              sx={{
-                                fontWeight: 700,
-                                color: "#e9edff",
-                                mb: 0.5,
-                              }}
-                            >
-                              {userItem.name}
-                            </Typography>
-                            <Chip
-                              label={
-                                userItem.role === "manager"
-                                  ? t("manager.manager")
-                                  : t("manager.employee")
-                              }
-                              size="small"
-                              sx={{
-                                backgroundColor:
-                                  userItem.role === "manager"
-                                    ? "rgba(17, 141, 211, 0.2)"
-                                    : "rgba(255, 180, 94, 0.2)",
-                                color:
-                                  userItem.role === "manager"
-                                    ? "#118dd3"
-                                    : "#f2b45e",
-                                fontWeight: 700,
-                                mt: 0.5,
-                              }}
-                            />
-                          </Box>
                           <Stack
                             direction="row"
-                            spacing={1}
+                            spacing={1.5}
                             alignItems="center"
+                            sx={{ width: { xs: "100%", sm: "auto" } }}
+                          >
+                            <Box
+                              sx={{
+                                width: { xs: 38, sm: 44 },
+                                height: { xs: 38, sm: 44 },
+                                borderRadius: "50%",
+                                backgroundColor: "#118dd3",
+                                color: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700,
+                                fontSize: { xs: 16, sm: 20 },
+                                letterSpacing: "0.02em",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {getInitials(userItem.name)}
+                            </Box>
+                            <Box sx={{ flexGrow: 1 }}>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{
+                                  fontWeight: 700,
+                                  color: isDark ? "#e9edff" : "#1a1a2e",
+                                  mb: 0.5,
+                                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                                }}
+                              >
+                                {userItem.name}
+                              </Typography>
+                              <Chip
+                                label={
+                                  userItem.role === "manager"
+                                    ? t("manager.manager")
+                                    : t("manager.employee")
+                                }
+                                size="small"
+                                sx={{
+                                  backgroundColor:
+                                    userItem.role === "manager"
+                                      ? "rgba(17, 141, 211, 0.2)"
+                                      : "rgba(255, 180, 94, 0.2)",
+                                  color:
+                                    userItem.role === "manager"
+                                      ? "#118dd3"
+                                      : "#f2b45e",
+                                  fontWeight: 700,
+                                  mt: 0.5,
+                                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                                }}
+                              />
+                            </Box>
+                          </Stack>
+                          <Stack
+                            direction="row"
+                            spacing={{ xs: 0.5, sm: 1 }}
+                            alignItems="center"
+                            sx={{ mt: { xs: 1, sm: 0 } }}
                           >
                             <Tooltip title={t("manager.editUser")}>
                               <IconButton
                                 onClick={() => openEditUser(userItem)}
+                                size="small"
                                 sx={{
                                   color: "#118dd3",
                                   border: "1px solid #118dd3",
-                                  backgroundColor: "#181b2f",
-                                  "&:hover": { backgroundColor: "#10131e" },
+                                  backgroundColor: isDark
+                                    ? "#181b2f"
+                                    : "#f5f7fa",
+                                  width: { xs: 32, sm: 40 },
+                                  height: { xs: 32, sm: 40 },
+                                  "&:hover": {
+                                    backgroundColor: isDark
+                                      ? "#10131e"
+                                      : "#e8f4fc",
+                                  },
                                 }}
                               >
-                                <EditIcon fontSize="small" />
+                                <EditIcon
+                                  sx={{ fontSize: { xs: 16, sm: 20 } }}
+                                />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title={t("manager.resetPassword")}>
                               <IconButton
                                 onClick={() => openResetPassword(userItem)}
+                                size="small"
                                 sx={{
                                   color: "#14b8a6",
                                   border: "1px solid #14b8a6",
-                                  backgroundColor: "#181b2f",
-                                  "&:hover": { backgroundColor: "#10131e" },
+                                  backgroundColor: isDark
+                                    ? "#181b2f"
+                                    : "#f5f7fa",
+                                  width: { xs: 32, sm: 40 },
+                                  height: { xs: 32, sm: 40 },
+                                  "&:hover": {
+                                    backgroundColor: isDark
+                                      ? "#10131e"
+                                      : "#e6f7f5",
+                                  },
                                 }}
                               >
-                                <KeyIcon fontSize="small" />
+                                <KeyIcon
+                                  sx={{ fontSize: { xs: 16, sm: 20 } }}
+                                />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title={t("manager.deleteUser")}>
                               <IconButton
                                 onClick={() => setDeleteUserId(userItem._id)}
+                                size="small"
                                 sx={{
                                   color: "#ff4d4f",
                                   border: "1px solid #ff4d4f",
-                                  backgroundColor: "#181b2f",
-                                  "&:hover": { backgroundColor: "#2b1820" },
+                                  backgroundColor: isDark
+                                    ? "#181b2f"
+                                    : "#f5f7fa",
+                                  width: { xs: 32, sm: 40 },
+                                  height: { xs: 32, sm: 40 },
+                                  "&:hover": {
+                                    backgroundColor: isDark
+                                      ? "#2b1820"
+                                      : "#fde8e8",
+                                  },
                                 }}
                               >
-                                <DeleteIcon fontSize="small" />
+                                <DeleteIcon
+                                  sx={{ fontSize: { xs: 16, sm: 20 } }}
+                                />
                               </IconButton>
                             </Tooltip>
                           </Stack>

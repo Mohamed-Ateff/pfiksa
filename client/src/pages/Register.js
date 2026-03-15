@@ -72,14 +72,28 @@ function Register() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ direction: isRtl ? "rtl" : "ltr" }}>
-      <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-        <Paper sx={{ p: 4, width: "100%" }}>
+    <Container
+      maxWidth="sm"
+      sx={{ direction: isRtl ? "rtl" : "ltr", px: { xs: 2, sm: 3 } }}
+    >
+      <Box
+        sx={{
+          mt: { xs: 2, sm: 4 },
+          mb: { xs: 2, sm: 4 },
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Paper sx={{ p: { xs: 2.5, sm: 3, md: 4 }, width: "100%" }}>
           <Typography
             variant="h4"
             component="h1"
             gutterBottom
-            sx={{ textAlign: isRtl ? "right" : "center", mb: 3 }}
+            sx={{
+              textAlign: isRtl ? "right" : "center",
+              mb: { xs: 2, sm: 3 },
+              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+            }}
           >
             {t("register.title")}
           </Typography>
@@ -222,7 +236,12 @@ function Register() {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{
+                mt: { xs: 2, sm: 3 },
+                mb: 2,
+                py: { xs: 1.2, sm: 1.5 },
+                fontSize: { xs: "0.9rem", sm: "1rem" },
+              }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} /> : t("register.submit")}

@@ -20,10 +20,13 @@ import {
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
 import { useNavigate } from "react-router-dom";
 import { reportService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useThemeMode } from "../context/ThemeContext";
 
 function EmployeeDashboard() {
   const [formData, setFormData] = useState({
@@ -42,6 +45,7 @@ function EmployeeDashboard() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { lang, setLang, t } = useLanguage();
+  const { mode, toggleTheme, isDark } = useThemeMode();
   const isRtl = lang === "ar";
 
   const totalReports = reports.length;
@@ -131,18 +135,19 @@ function EmployeeDashboard() {
         position: "relative",
         minHeight: "100vh",
         overflow: "hidden",
-        background:
-          "radial-gradient(circle at top, rgba(17, 141, 211, 0.2), transparent 45%), linear-gradient(180deg, #0b0f1f 0%, #121421 55%, #0f1324 100%)",
-        color: "#e9edff",
+        background: isDark
+          ? "radial-gradient(circle at top, rgba(17, 141, 211, 0.2), transparent 45%), linear-gradient(180deg, #0b0f1f 0%, #121421 55%, #0f1324 100%)"
+          : "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 55%, #e2e8f0 100%)",
+        color: isDark ? "#e9edff" : "#1a1a2e",
       }}
     >
       <Box
         sx={{
           position: "absolute",
-          top: -220,
-          right: -180,
-          width: 420,
-          height: 420,
+          top: { xs: -150, md: -220 },
+          right: { xs: -120, md: -180 },
+          width: { xs: 280, md: 420 },
+          height: { xs: 280, md: 420 },
           background:
             "radial-gradient(circle, rgba(17, 141, 211, 0.35), rgba(17, 141, 211, 0) 70%)",
           opacity: 0.9,
@@ -152,10 +157,10 @@ function EmployeeDashboard() {
       <Box
         sx={{
           position: "absolute",
-          bottom: -260,
-          left: -160,
-          width: 520,
-          height: 520,
+          bottom: { xs: -180, md: -260 },
+          left: { xs: -100, md: -160 },
+          width: { xs: 350, md: 520 },
+          height: { xs: 350, md: 520 },
           background:
             "radial-gradient(circle, rgba(242, 180, 94, 0.18), rgba(242, 180, 94, 0) 70%)",
           opacity: 0.8,
@@ -164,45 +169,64 @@ function EmployeeDashboard() {
       />
       <Box sx={{ position: "relative", zIndex: 1 }}>
         <Box sx={{ pt: { xs: 2, md: 3 }, pb: 0 }}>
-          <Container maxWidth="lg">
+          <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2, md: 3 } }}>
             <Paper
               sx={{
                 p: { xs: 1.5, md: 2 },
                 borderRadius: 0,
-                background:
-                  "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)",
-                border: "1px solid rgba(17, 141, 211, 0.25)",
-                boxShadow: "0 18px 40px rgba(5, 8, 20, 0.55)",
+                background: isDark
+                  ? "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)"
+                  : "linear-gradient(130deg, rgba(17, 141, 211, 0.08), rgba(255, 255, 255, 0.98) 60%)",
+                border: isDark
+                  ? "1px solid rgba(17, 141, 211, 0.25)"
+                  : "1px solid rgba(17, 141, 211, 0.15)",
+                boxShadow: isDark
+                  ? "0 18px 40px rgba(5, 8, 20, 0.55)"
+                  : "0 4px 20px rgba(0, 0, 0, 0.08)",
                 backdropFilter: "blur(6px)",
               }}
             >
               <Stack
-                direction={{ xs: "column", md: "row" }}
+                direction={{ xs: "column", sm: "row" }}
                 spacing={2}
-                alignItems={{ xs: "flex-start", md: "center" }}
+                alignItems={{ xs: "flex-start", sm: "center" }}
                 justifyContent="space-between"
               >
                 <Stack
                   direction="row"
-                  spacing={2}
+                  spacing={{ xs: 1.5, sm: 2 }}
                   alignItems="center"
-                  sx={{ flexGrow: 1 }}
+                  sx={{ flexGrow: 1, width: { xs: "100%", sm: "auto" } }}
                 >
                   <Box
                     component="img"
-                    src="/logo.png"
+                    src={isDark ? "/logo.png" : "/logo-white.png"}
                     alt="Logo"
-                    sx={{ height: 52, width: "auto", objectFit: "contain" }}
+                    sx={{
+                      height: { xs: 40, sm: 52 },
+                      width: "auto",
+                      objectFit: "contain",
+                    }}
                   />
-                  <Box>
+                  <Box sx={{ flexGrow: 1 }}>
                     <Typography
                       variant="h6"
                       color="primary"
-                      sx={{ fontWeight: 700, letterSpacing: "0.01em" }}
+                      sx={{
+                        fontWeight: 700,
+                        letterSpacing: "0.01em",
+                        fontSize: { xs: "1rem", sm: "1.25rem" },
+                      }}
                     >
                       {t("common.appName")}
                     </Typography>
-                    <Typography variant="body2" color="#c7cbe4">
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        color: isDark ? "#c7cbe4" : "#5a5a7a",
+                      }}
+                    >
                       {t("employee.welcomeBack", {
                         name: user?.name || "",
                       })}
@@ -214,17 +238,18 @@ function EmployeeDashboard() {
                   direction="row"
                   spacing={1}
                   alignItems="center"
-                  sx={{ display: { xs: "none", md: "flex" } }}
+                  sx={{ display: { xs: "none", sm: "flex" } }}
                 >
                   <Button
                     size="small"
                     onClick={() => setLang(lang === "en" ? "ar" : "en")}
                     sx={{
-                      minWidth: 44,
-                      height: 44,
+                      minWidth: { xs: 38, sm: 44 },
+                      height: { xs: 38, sm: 44 },
                       px: 1.25,
                       borderRadius: "999px",
                       lineHeight: 1,
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
                       color: "#ffffff",
                       border: "1px solid #118dd3",
                       backgroundColor: "#118dd3",
@@ -234,17 +259,46 @@ function EmployeeDashboard() {
                     {t("common.languageSwitch")}
                   </Button>
                   <IconButton
-                    onClick={handleLogout}
+                    onClick={toggleTheme}
                     sx={{
-                      width: 44,
-                      height: 44,
-                      color: "#ffffff",
-                      border: "1px solid #2a2f4f",
-                      backgroundColor: "#121421",
-                      "&:hover": { backgroundColor: "#1f2440" },
+                      width: { xs: 38, sm: 44 },
+                      height: { xs: 38, sm: 44 },
+                      color: isDark ? "#f2b45e" : "#118dd3",
+                      border: isDark
+                        ? "1px solid #f2b45e"
+                        : "1px solid #118dd3",
+                      backgroundColor: isDark
+                        ? "rgba(242, 180, 94, 0.1)"
+                        : "rgba(17, 141, 211, 0.1)",
+                      "&:hover": {
+                        backgroundColor: isDark
+                          ? "rgba(242, 180, 94, 0.2)"
+                          : "rgba(17, 141, 211, 0.2)",
+                      },
                     }}
                   >
-                    <LogoutIcon />
+                    {isDark ? (
+                      <LightModeIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                    ) : (
+                      <DarkModeIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    onClick={handleLogout}
+                    sx={{
+                      width: { xs: 38, sm: 44 },
+                      height: { xs: 38, sm: 44 },
+                      color: isDark ? "#ffffff" : "#1a1a2e",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #d0d0d0",
+                      backgroundColor: isDark ? "#121421" : "#ffffff",
+                      "&:hover": {
+                        backgroundColor: isDark ? "#1f2440" : "#f0f0f0",
+                      },
+                    }}
+                  >
+                    <LogoutIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
                   </IconButton>
                 </Stack>
               </Stack>
@@ -253,17 +307,18 @@ function EmployeeDashboard() {
                 direction="row"
                 spacing={1}
                 alignItems="center"
-                sx={{ mt: 2, display: { xs: "flex", md: "none" } }}
+                sx={{ mt: 2, display: { xs: "flex", sm: "none" } }}
               >
                 <Button
                   size="small"
                   onClick={() => setLang(lang === "en" ? "ar" : "en")}
                   sx={{
-                    minWidth: 44,
-                    height: 44,
+                    minWidth: 38,
+                    height: 38,
                     px: 1.25,
                     borderRadius: "999px",
                     lineHeight: 1,
+                    fontSize: "0.75rem",
                     color: "#ffffff",
                     border: "1px solid #118dd3",
                     backgroundColor: "#118dd3",
@@ -273,24 +328,52 @@ function EmployeeDashboard() {
                   {t("common.languageSwitch")}
                 </Button>
                 <IconButton
-                  onClick={handleLogout}
+                  onClick={toggleTheme}
                   sx={{
-                    width: 44,
-                    height: 44,
-                    color: "#ffffff",
-                    border: "1px solid #2a2f4f",
-                    backgroundColor: "#121421",
-                    "&:hover": { backgroundColor: "#1f2440" },
+                    width: 38,
+                    height: 38,
+                    color: isDark ? "#f2b45e" : "#118dd3",
+                    border: isDark ? "1px solid #f2b45e" : "1px solid #118dd3",
+                    backgroundColor: isDark
+                      ? "rgba(242, 180, 94, 0.1)"
+                      : "rgba(17, 141, 211, 0.1)",
+                    "&:hover": {
+                      backgroundColor: isDark
+                        ? "rgba(242, 180, 94, 0.2)"
+                        : "rgba(17, 141, 211, 0.2)",
+                    },
                   }}
                 >
-                  <LogoutIcon />
+                  {isDark ? (
+                    <LightModeIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    <DarkModeIcon sx={{ fontSize: 18 }} />
+                  )}
+                </IconButton>
+                <IconButton
+                  onClick={handleLogout}
+                  sx={{
+                    width: 38,
+                    height: 38,
+                    color: isDark ? "#ffffff" : "#333333",
+                    border: isDark ? "1px solid #2a2f4f" : "1px solid #cccccc",
+                    backgroundColor: isDark ? "#121421" : "#f5f5f5",
+                    "&:hover": {
+                      backgroundColor: isDark ? "#1f2440" : "#e0e0e0",
+                    },
+                  }}
+                >
+                  <LogoutIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Stack>
             </Paper>
           </Container>
         </Box>
 
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container
+          maxWidth="lg"
+          sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 1.5, sm: 2, md: 3 } }}
+        >
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -309,10 +392,15 @@ function EmployeeDashboard() {
               mb: 3,
               position: "relative",
               overflow: "hidden",
-              background:
-                "linear-gradient(135deg, rgba(17, 141, 211, 0.14) 0%, rgba(18, 20, 33, 0.85) 55%, rgba(15, 19, 36, 0.95) 100%)",
-              border: "1px solid rgba(17, 141, 211, 0.3)",
-              boxShadow: "0 20px 40px rgba(7, 10, 24, 0.6)",
+              background: isDark
+                ? "linear-gradient(135deg, rgba(17, 141, 211, 0.14) 0%, rgba(18, 20, 33, 0.85) 55%, rgba(15, 19, 36, 0.95) 100%)"
+                : "linear-gradient(135deg, rgba(17, 141, 211, 0.06) 0%, rgba(255, 255, 255, 0.95) 55%, rgba(248, 250, 252, 1) 100%)",
+              border: isDark
+                ? "1px solid rgba(17, 141, 211, 0.3)"
+                : "1px solid rgba(17, 141, 211, 0.15)",
+              boxShadow: isDark
+                ? "0 20px 40px rgba(7, 10, 24, 0.6)"
+                : "0 4px 20px rgba(0, 0, 0, 0.06)",
             }}
           >
             <Stack
@@ -323,79 +411,141 @@ function EmployeeDashboard() {
               sx={{ mb: 2 }}
             >
               <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                  }}
+                >
                   {t("employee.snapshotTitle")}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                >
                   {t("employee.snapshotSubtitle")}
                 </Typography>
               </Box>
             </Stack>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <Box
                   sx={{
-                    p: 2,
-                    border: "1px solid rgba(17, 141, 211, 0.2)",
-                    background:
-                      "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02)",
+                    p: { xs: 1.5, sm: 2 },
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.2)"
+                      : "1px solid rgba(17, 141, 211, 0.15)",
+                    background: isDark
+                      ? "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))"
+                      : "linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(17, 141, 211, 0.05))",
+                    boxShadow: isDark
+                      ? "inset 0 0 0 1px rgba(255, 255, 255, 0.02)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.7rem", sm: "0.875rem" } }}
+                  >
                     {t("employee.totalSubmitted")}
                   </Typography>
-                  <Typography variant="h4" sx={{ color: "#118dd3" }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      color: "#118dd3",
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
                     {totalReports}
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <Box
                   sx={{
-                    p: 2,
-                    border: "1px solid rgba(17, 141, 211, 0.2)",
-                    background:
-                      "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02)",
+                    p: { xs: 1.5, sm: 2 },
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.2)"
+                      : "1px solid rgba(17, 141, 211, 0.15)",
+                    background: isDark
+                      ? "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))"
+                      : "linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(17, 141, 211, 0.05))",
+                    boxShadow: isDark
+                      ? "inset 0 0 0 1px rgba(255, 255, 255, 0.02)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.7rem", sm: "0.875rem" } }}
+                  >
                     {t("employee.checked")}
                   </Typography>
-                  <Typography variant="h4">{checkedReports}</Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
+                    {checkedReports}
+                  </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} sm={12} md={4}>
                 <Box
                   sx={{
-                    p: 2,
-                    border: "1px solid rgba(17, 141, 211, 0.2)",
-                    background:
-                      "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02)",
+                    p: { xs: 1.5, sm: 2 },
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.2)"
+                      : "1px solid rgba(17, 141, 211, 0.15)",
+                    background: isDark
+                      ? "linear-gradient(150deg, rgba(18, 20, 33, 0.95), rgba(17, 141, 211, 0.12))"
+                      : "linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(17, 141, 211, 0.05))",
+                    boxShadow: isDark
+                      ? "inset 0 0 0 1px rgba(255, 255, 255, 0.02)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.04)",
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.7rem", sm: "0.875rem" } }}
+                  >
                     {t("employee.pending")}
                   </Typography>
-                  <Typography variant="h4">{pendingReports}</Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    }}
+                  >
+                    {pendingReports}
+                  </Typography>
                 </Box>
               </Grid>
             </Grid>
           </Paper>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, md: 3 }}>
             <Grid item xs={12}>
               <Paper
                 sx={{
-                  p: { xs: 2.5, md: 3 },
+                  p: { xs: 2, sm: 2.5, md: 3 },
                   borderRadius: 0,
-                  background:
-                    "linear-gradient(140deg, rgba(18, 20, 33, 0.85) 0%, rgba(17, 141, 211, 0.12) 100%)",
-                  border: "1px solid rgba(42, 47, 79, 0.9)",
-                  boxShadow: "0 18px 34px rgba(5, 8, 20, 0.55)",
+                  background: isDark
+                    ? "linear-gradient(140deg, rgba(18, 20, 33, 0.85) 0%, rgba(17, 141, 211, 0.12) 100%)"
+                    : "linear-gradient(140deg, rgba(255, 255, 255, 0.95) 0%, rgba(17, 141, 211, 0.05) 100%)",
+                  border: isDark
+                    ? "1px solid rgba(42, 47, 79, 0.9)"
+                    : "1px solid rgba(17, 141, 211, 0.15)",
+                  boxShadow: isDark
+                    ? "0 18px 34px rgba(5, 8, 20, 0.55)"
+                    : "0 4px 20px rgba(0, 0, 0, 0.06)",
                   backdropFilter: "blur(12px)",
                 }}
               >
@@ -407,10 +557,20 @@ function EmployeeDashboard() {
                   sx={{ mb: 2 }}
                 >
                   <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                      }}
+                    >
                       {t("employee.submitTitle")}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+                    >
                       {t("employee.submitSubtitle")}
                     </Typography>
                   </Box>
@@ -422,15 +582,19 @@ function EmployeeDashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 0,
-                          backgroundColor: "rgba(15, 19, 36, 0.85)",
-                          border: "1px solid rgba(42, 47, 79, 0.9)",
+                          backgroundColor: isDark
+                            ? "rgba(15, 19, 36, 0.85)"
+                            : "rgba(255, 255, 255, 0.95)",
+                          border: isDark
+                            ? "1px solid rgba(42, 47, 79, 0.9)"
+                            : "1px solid #e0e0e0",
                         }}
                       >
                         <Typography
                           variant="subtitle2"
                           sx={{
                             mb: 1,
-                            color: "#cfd3ff",
+                            color: isDark ? "#cfd3ff" : "#1a1a2e",
                             textAlign: isRtl ? "right" : "left",
                           }}
                         >
@@ -460,15 +624,19 @@ function EmployeeDashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 0,
-                          backgroundColor: "rgba(15, 19, 36, 0.85)",
-                          border: "1px solid rgba(42, 47, 79, 0.9)",
+                          backgroundColor: isDark
+                            ? "rgba(15, 19, 36, 0.85)"
+                            : "rgba(255, 255, 255, 0.95)",
+                          border: isDark
+                            ? "1px solid rgba(42, 47, 79, 0.9)"
+                            : "1px solid #e0e0e0",
                         }}
                       >
                         <Typography
                           variant="subtitle2"
                           sx={{
                             mb: 1,
-                            color: "#cfd3ff",
+                            color: isDark ? "#cfd3ff" : "#1a1a2e",
                             textAlign: isRtl ? "right" : "left",
                           }}
                         >
@@ -497,15 +665,19 @@ function EmployeeDashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 0,
-                          backgroundColor: "rgba(15, 19, 36, 0.85)",
-                          border: "1px solid rgba(42, 47, 79, 0.9)",
+                          backgroundColor: isDark
+                            ? "rgba(15, 19, 36, 0.85)"
+                            : "rgba(255, 255, 255, 0.95)",
+                          border: isDark
+                            ? "1px solid rgba(42, 47, 79, 0.9)"
+                            : "1px solid #e0e0e0",
                         }}
                       >
                         <Typography
                           variant="subtitle2"
                           sx={{
                             mb: 1,
-                            color: "#cfd3ff",
+                            color: isDark ? "#cfd3ff" : "#1a1a2e",
                             textAlign: isRtl ? "right" : "left",
                           }}
                         >
@@ -534,15 +706,19 @@ function EmployeeDashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 0,
-                          backgroundColor: "rgba(15, 19, 36, 0.85)",
-                          border: "1px solid rgba(42, 47, 79, 0.9)",
+                          backgroundColor: isDark
+                            ? "rgba(15, 19, 36, 0.85)"
+                            : "rgba(255, 255, 255, 0.95)",
+                          border: isDark
+                            ? "1px solid rgba(42, 47, 79, 0.9)"
+                            : "1px solid #e0e0e0",
                         }}
                       >
                         <Typography
                           variant="subtitle2"
                           sx={{
                             mb: 1,
-                            color: "#cfd3ff",
+                            color: isDark ? "#cfd3ff" : "#1a1a2e",
                             textAlign: isRtl ? "right" : "left",
                           }}
                         >
@@ -573,8 +749,12 @@ function EmployeeDashboard() {
                       mt: 2.5,
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "rgba(15, 19, 36, 0.85)",
-                      border: "1px dashed rgba(17, 141, 211, 0.45)",
+                      backgroundColor: isDark
+                        ? "rgba(15, 19, 36, 0.85)"
+                        : "rgba(255, 255, 255, 0.95)",
+                      border: isDark
+                        ? "1px dashed rgba(17, 141, 211, 0.45)"
+                        : "1px dashed rgba(17, 141, 211, 0.35)",
                     }}
                   >
                     <Stack direction="row" spacing={2} alignItems="center">
@@ -584,7 +764,7 @@ function EmployeeDashboard() {
                         startIcon={<UploadFileIcon />}
                         sx={{
                           borderColor: "rgba(17, 141, 211, 0.6)",
-                          color: "#e9edff",
+                          color: isDark ? "#e9edff" : "#118dd3",
                           "&:hover": {
                             borderColor: "rgba(17, 141, 211, 0.9)",
                             backgroundColor: "rgba(17, 141, 211, 0.08)",
@@ -671,9 +851,15 @@ function EmployeeDashboard() {
                 p: { xs: 2, md: 2.5 },
                 mb: 2,
                 borderRadius: 0,
-                backgroundColor: "rgba(18, 20, 33, 0.75)",
-                border: "1px solid rgba(42, 47, 79, 0.9)",
-                boxShadow: "0 14px 26px rgba(5, 8, 20, 0.45)",
+                backgroundColor: isDark
+                  ? "rgba(18, 20, 33, 0.75)"
+                  : "rgba(255, 255, 255, 0.95)",
+                border: isDark
+                  ? "1px solid rgba(42, 47, 79, 0.9)"
+                  : "1px solid rgba(17, 141, 211, 0.15)",
+                boxShadow: isDark
+                  ? "0 14px 26px rgba(5, 8, 20, 0.45)"
+                  : "0 4px 20px rgba(0, 0, 0, 0.06)",
                 backdropFilter: "blur(10px)",
               }}
             >
@@ -695,16 +881,20 @@ function EmployeeDashboard() {
                   label={`${t("employee.totalSubmitted")}: ${totalReports}`}
                   size="small"
                   sx={{
-                    backgroundColor: "rgba(17, 141, 211, 0.18)",
-                    color: "#9ed6f5",
-                    border: "1px solid rgba(17, 141, 211, 0.4)",
+                    backgroundColor: isDark
+                      ? "rgba(17, 141, 211, 0.18)"
+                      : "rgba(17, 141, 211, 0.12)",
+                    color: isDark ? "#9ed6f5" : "#118dd3",
+                    border: isDark
+                      ? "1px solid rgba(17, 141, 211, 0.4)"
+                      : "1px solid rgba(17, 141, 211, 0.3)",
                   }}
                 />
               </Stack>
             </Paper>
             <Grid container spacing={2}>
               {reports.map((report) => (
-                <Grid item xs={12} md={4} key={report._id}>
+                <Grid item xs={12} sm={6} md={4} key={report._id}>
                   <Paper
                     onClick={() => handleOpenReport(report)}
                     sx={{
@@ -713,10 +903,15 @@ function EmployeeDashboard() {
                       cursor: "pointer",
                       height: "100%",
                       position: "relative",
-                      background:
-                        "linear-gradient(160deg, rgba(18, 20, 33, 0.95) 0%, rgba(17, 141, 211, 0.1) 100%)",
-                      border: "1px solid rgba(42, 47, 79, 0.9)",
-                      boxShadow: "0 14px 28px rgba(4, 6, 18, 0.5)",
+                      background: isDark
+                        ? "linear-gradient(160deg, rgba(18, 20, 33, 0.95) 0%, rgba(17, 141, 211, 0.1) 100%)"
+                        : "linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(17, 141, 211, 0.05) 100%)",
+                      border: isDark
+                        ? "1px solid rgba(42, 47, 79, 0.9)"
+                        : "1px solid rgba(17, 141, 211, 0.15)",
+                      boxShadow: isDark
+                        ? "0 14px 28px rgba(4, 6, 18, 0.5)"
+                        : "0 4px 16px rgba(0, 0, 0, 0.06)",
                       transition:
                         "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
                       "&::before": {
@@ -728,12 +923,14 @@ function EmployeeDashboard() {
                         height: 2,
                         background:
                           "linear-gradient(90deg, rgba(17, 141, 211, 0.7), rgba(20, 184, 166, 0.7))",
-                        opacity: 0.6,
+                        opacity: isDark ? 0.6 : 0.8,
                       },
                       "&:hover": {
                         transform: "translateY(-4px)",
                         borderColor: "rgba(17, 141, 211, 0.6)",
-                        boxShadow: "0 20px 38px rgba(6, 10, 24, 0.65)",
+                        boxShadow: isDark
+                          ? "0 20px 38px rgba(6, 10, 24, 0.65)"
+                          : "0 8px 24px rgba(0, 0, 0, 0.1)",
                       },
                     }}
                   >
@@ -754,10 +951,20 @@ function EmployeeDashboard() {
                           size="small"
                           sx={{
                             backgroundColor: report.isChecked
-                              ? "rgba(17, 141, 211, 0.2)"
-                              : "rgba(255, 180, 94, 0.2)",
-                            color: report.isChecked ? "#118dd3" : "#f2b45e",
-                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                              ? isDark
+                                ? "rgba(17, 141, 211, 0.2)"
+                                : "rgba(17, 141, 211, 0.12)"
+                              : isDark
+                                ? "rgba(255, 180, 94, 0.2)"
+                                : "rgba(255, 152, 0, 0.12)",
+                            color: report.isChecked
+                              ? "#118dd3"
+                              : isDark
+                                ? "#f2b45e"
+                                : "#e65100",
+                            border: isDark
+                              ? "1px solid rgba(255, 255, 255, 0.08)"
+                              : "1px solid rgba(0, 0, 0, 0.08)",
                           }}
                         />
                         <Box sx={{ flexGrow: 1 }} />
@@ -767,9 +974,13 @@ function EmployeeDashboard() {
                           }`}
                           size="small"
                           sx={{
-                            backgroundColor: "rgba(17, 141, 211, 0.15)",
-                            color: "#9ed6f5",
-                            border: "1px solid rgba(17, 141, 211, 0.35)",
+                            backgroundColor: isDark
+                              ? "rgba(17, 141, 211, 0.15)"
+                              : "rgba(17, 141, 211, 0.1)",
+                            color: isDark ? "#9ed6f5" : "#118dd3",
+                            border: isDark
+                              ? "1px solid rgba(17, 141, 211, 0.35)"
+                              : "1px solid rgba(17, 141, 211, 0.25)",
                           }}
                         />
                       </Stack>
@@ -867,8 +1078,10 @@ function EmployeeDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#181b2f",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#181b2f" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -886,8 +1099,10 @@ function EmployeeDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -903,8 +1118,10 @@ function EmployeeDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -922,8 +1139,10 @@ function EmployeeDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -941,8 +1160,10 @@ function EmployeeDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
@@ -958,8 +1179,10 @@ function EmployeeDashboard() {
                     sx={{
                       p: 2,
                       borderRadius: 0,
-                      backgroundColor: "#121421",
-                      border: "1px solid #2a2f4f",
+                      backgroundColor: isDark ? "#121421" : "#f8f9fa",
+                      border: isDark
+                        ? "1px solid #2a2f4f"
+                        : "1px solid #e0e0e0",
                     }}
                   >
                     <Typography variant="subtitle2">
