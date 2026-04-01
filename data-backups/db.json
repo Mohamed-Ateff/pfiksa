@@ -1,0 +1,41 @@
+{
+  "users": [
+    {
+      "_id": 1,
+      "email": "shahd@gmail.com",
+      "password": "Shahd$",
+      "name": "Shahd",
+      "role": "manager",
+      "position": "Manager",
+      "createdAt": "2026-04-01T02:36:42.481Z"
+    },
+    {
+      "_id": 2,
+      "email": "shahd1@gmail.com",
+      "password": "Shahd$1",
+      "name": "Shahd One",
+      "role": "employee",
+      "position": "Developer",
+      "createdAt": "2026-04-01T02:36:42.482Z"
+    },
+    {
+      "_id": 3,
+      "email": "john@gmail.com",
+      "password": "John123456",
+      "name": "John Doe",
+      "role": "employee",
+      "position": "Designer",
+      "createdAt": "2026-04-01T02:36:42.483Z"
+    },
+    {
+      "_id": 4,
+      "email": "jane@gmail.com",
+      "password": "Jane123456",
+      "name": "Jane Smith",
+      "role": "employee",
+      "position": "Project Manager",
+      "createdAt": "2026-04-01T02:36:42.483Z"
+    }
+  ],
+  "reports": []
+}

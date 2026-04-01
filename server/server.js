@@ -35,18 +35,6 @@ const connectDB = async () => {
   }
 };
 
-// Seed initial data
-const seedInitialData = async () => {
-  try {
-    if (useMemoryDB) {
-      // Seed memory database
-      const testUsers = [
-        {
-          email: "shahd@gmail.com",
-          password: "Shahd$",
-          name: "Shahd",
-          role: "manager",
-          position: "Manager",
 // Seed initial data - memory DB only
 const seedInitialData = async () => {
   try {
