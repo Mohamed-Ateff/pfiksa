@@ -42,7 +42,12 @@ exports.updateUser = async (req, res) => {
     const { userId } = req.params;
     const { name, email, role, position } = req.body;
 
-    const updated = memoryDB.updateUser(Number(userId), { name, email, role, position });
+    const updated = memoryDB.updateUser(Number(userId), {
+      name,
+      email,
+      role,
+      position,
+    });
     if (!updated) {
       return res.status(404).json({ message: "User not found" });
     }

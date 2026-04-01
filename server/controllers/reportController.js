@@ -3,11 +3,18 @@ const memoryDB = require("../memoryDB");
 // Helper: populate report with employee and checker info
 function populateReport(report) {
   const employee = memoryDB.findUserById(report.employeeId);
-  const checker = report.checkedBy ? memoryDB.findUserById(report.checkedBy) : null;
+  const checker = report.checkedBy
+    ? memoryDB.findUserById(report.checkedBy)
+    : null;
   return {
     ...report,
     employeeId: employee
-      ? { _id: employee._id, name: employee.name, email: employee.email, position: employee.position }
+      ? {
+          _id: employee._id,
+          name: employee.name,
+          email: employee.email,
+          position: employee.position,
+        }
       : report.employeeId,
     checkedBy: checker
       ? { _id: checker._id, name: checker.name, email: checker.email }
@@ -18,7 +25,8 @@ function populateReport(report) {
 // Create a new report
 exports.createReport = async (req, res) => {
   try {
-    const { completedTasks, inProgressTasks, commitments, challenges } = req.body;
+    const { completedTasks, inProgressTasks, commitments, challenges } =
+      req.body;
 
     const report = memoryDB.createReport({
       employeeId: req.userId,
@@ -130,14 +138,18 @@ exports.getReportsByDate = async (req, res) => {
 exports.deleteReport = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const report = memoryDB.findAllReports().find((r) => r._id === Number(reportId));
+    const report = memoryDB
+      .findAllReports()
+      .find((r) => r._id === Number(reportId));
 
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
 
     if (report.employeeId !== req.userId && req.userRole !== "manager") {
-      return res.status(403).json({ message: "Not authorized to delete this report" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this report" });
     }
 
     memoryDB.deleteReport(Number(reportId));

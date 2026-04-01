@@ -8,7 +8,10 @@ const auth = (req, res, next) => {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "default_secret",
+    );
     req.userId = decoded.id;
     req.userRole = decoded.role;
     next();
