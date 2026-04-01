@@ -21,34 +21,20 @@ const connectDB = async () => {
     const isProduction = process.env.NODE_ENV === "production";
     let mongoUri = process.env.MONGODB_URI;
 
-    // If in production but no MONGODB_URI, try to use MongoDB Memory Server as fallback
-    if (!mongoUri) {
-      if (isProduction) {
-        console.error("❌ MONGODB_URI not set in production. Using in-memory database...");
-        try {
-          const { MongoMemoryServer } = require("mongodb-memory-server");
-          mongoServer = await MongoMemoryServer.create();
-          mongoUri = mongoServer.getUri();
-          console.log("✅ MongoDB Memory Server started as fallback");
-        } catch (err) {
-          throw new Error(`Cannot connect to MongoDB: ${err.message}`);
-        }
-      } else {
-        // Development: use in-memory database
-        try {
-          const { MongoMemoryServer } = require("mongodb-memory-server");
-          console.log(`[${new Date().toLocaleTimeString()}] Starting MongoDB Memory Server...`);
-          mongoServer = await MongoMemoryServer.create();
-          mongoUri = mongoServer.getUri();
-          console.log("✅ MongoDB Memory Server connected successfully");
-        } catch (err) {
-          throw new Error(`Cannot start MongoDB Memory Server: ${err.message}`);
-        }
+    // Use in-memory database (works everywhere, no setup needed)
+    if (!mongoUri || mongoUri.includes("localhost") || !mongoUri.includes("mongodb")) {
+      try {
+        const { MongoMemoryServer } = require("mongodb-memory-server");
+        console.log(`[${new Date().toLocaleTimeString()}] Starting In-Memory Database...`);
+        mongoServer = await MongoMemoryServer.create();
+        mongoUri = mongoServer.getUri();
+        console.log("✅ Database connected (in-memory)");
+      } catch (err) {
+        console.error(`Cannot start database: ${err.message}`);
+        throw err;
       }
     } else {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] Connecting to MongoDB at ${mongoUri.substring(0, 50)}...`
-      );
+      console.log(`[${new Date().toLocaleTimeString()}] Connecting to MongoDB Cloud...`);
     }
 
     await mongoose.connect(mongoUri, {
@@ -58,25 +44,23 @@ const connectDB = async () => {
       connectTimeoutMS: 10000,
     });
 
-    console.log("✅ MongoDB connected successfully");
+    console.log("✅ Database connected successfully");
 
     // Add connection event listeners
     mongoose.connection.on("disconnected", () => {
-      console.warn("⚠️ MongoDB disconnected. Attempting to reconnect...");
+      console.warn("⚠️ Database disconnected");
     });
 
     mongoose.connection.on("reconnected", () => {
-      console.log("✅ MongoDB reconnected");
+      console.log("✅ Database reconnected");
     });
 
     mongoose.connection.on("error", (err) => {
-      console.error("MongoDB connection error:", err.message);
+      console.error("Database error:", err.message);
     });
 
-    // Seed initial data if in development and empty
-    if (process.env.NODE_ENV === "development") {
-      await seedInitialData();
-    }
+    // Seed initial data
+    await seedInitialData();
 
     return true; // Success
   } catch (err) {
