@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection - use in-memory database for stability
+// MongoDB Connection - use in-memory database for stability (Production-Ready)
 let mongoServer;
 const connectDB = async () => {
   try {
