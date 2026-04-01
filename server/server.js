@@ -1,13 +1,13 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-// Import memory database
+// Import memory database (pure JS, no external dependencies)
 const memoryDB = require("./memoryDB");
+let useMemoryDB = true; // Default to memory DB on Render
 
 const app = express();
 
@@ -17,50 +17,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection - use real MongoDB if available, fallback to memory DB
-let mongoServer;
-let useMemoryDB = false;
-
+// Database Connection - use memory DB only
 const connectDB = async () => {
   try {
-    console.log(`[${new Date().toLocaleTimeString()}] Connecting to database...`);
-
-    // Try MongoDB first
-    if (process.env.MONGODB_URI) {
-      console.log("Connecting to MongoDB...");
-      await mongoose.connect(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000,
-      });
-      console.log("✅ MongoDB connected");
-    } else {
-      // Try in-memory MongoDB
-      try {
-        console.log("Starting in-memory MongoDB...");
-        const { MongoMemoryServer } = require("mongodb-memory-server");
-        mongoServer = await MongoMemoryServer.create();
-        const mongoUri = mongoServer.getUri();
-        await mongoose.connect(mongoUri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        });
-        console.log("✅ In-Memory MongoDB connected");
-      } catch (mongoErr) {
-        console.warn("MongoDB not available, using pure memory database");
-        useMemoryDB = true;
-      }
-    }
-
+    console.log(`[${new Date().toLocaleTimeString()}] Starting database...`);
+    
+    // Just use memory DB - it's pure JavaScript, works everywhere
+    console.log("✅ Using in-memory database (zero dependencies)");
+    
     // Seed initial data
     await seedInitialData();
+    
     return true;
   } catch (err) {
     console.error(`❌ Database error: ${err.message}`);
-    console.warn("Using pure memory database as fallback");
-    useMemoryDB = true;
-    await seedInitialData();
-    return true;
+    return false;
   }
 };
 
@@ -76,70 +47,54 @@ const seedInitialData = async () => {
           name: "Shahd",
           role: "manager",
           position: "Manager",
-        },
-        {
-          email: "shahd1@gmail.com",
-          password: "Shahd$1",
-          name: "Shahd One",
-          role: "employee",
-          position: "Developer",
-        },
-      ];
+// Seed initial data - memory DB only
+const seedInitialData = async () => {
+  try {
+    const testUsers = [
+      {
+        email: "shahd@gmail.com",
+        password: "Shahd$",
+        name: "Shahd",
+        role: "manager",
+        position: "Manager",
+      },
+      {
+        email: "shahd1@gmail.com",
+        password: "Shahd$1",
+        name: "Shahd One",
+        role: "employee",
+        position: "Developer",
+      },
+      {
+        email: "john@gmail.com",
+        password: "John123456",
+        name: "John Doe",
+        role: "employee",
+        position: "Designer",
+      },
+      {
+        email: "jane@gmail.com",
+        password: "Jane123456",
+        name: "Jane Smith",
+        role: "employee",
+        position: "Project Manager",
+      },
+    ];
 
-      const existingUser = memoryDB.findUserByEmail("shahd@gmail.com");
-      if (!existingUser) {
-        for (const userData of testUsers) {
-          memoryDB.createUser(userData);
-        }
-        console.log("✅ Memory DB seeded with test users");
+    const existingUser = memoryDB.findUserByEmail("shahd@gmail.com");
+    if (!existingUser) {
+      for (const userData of testUsers) {
+        memoryDB.createUser(userData);
       }
+      console.log("✅ Test users created:");
+      testUsers.forEach((u) =>
+        console.log(`   📧 ${u.email} | 🔑 ${u.password}`),
+      );
     } else {
-      // Seed MongoDB
-      const User = require("./models/User");
-      const count = await User.countDocuments();
-
-      if (count === 0) {
-        console.log("📊 Seeding initial test users...");
-        const testUsers = [
-          {
-            name: "Shahd",
-            email: "shahd@gmail.com",
-            password: "Shahd$",
-            role: "manager",
-            position: "Manager",
-          },
-          {
-            name: "Shahd One",
-            email: "shahd1@gmail.com",
-            password: "Shahd$1",
-            role: "employee",
-            position: "Developer",
-          },
-          {
-            name: "John Doe",
-            email: "john@gmail.com",
-            password: "John123456",
-            role: "employee",
-            position: "Designer",
-          },
-          {
-            name: "Jane Smith",
-            email: "jane@gmail.com",
-            password: "Jane123456",
-            role: "employee",
-            position: "Project Manager",
-          },
-        ];
-
-        for (const userData of testUsers) {
-          const user = new User(userData);
-          await user.save();
-        }
-        console.log("✅ Test users created:");
-        testUsers.forEach((u) =>
-          console.log(`   📧 ${u.email} | 🔑 ${u.password}`),
-        );
-      }
+      console.log("✅ Database already initialized");
+    }
+  } catch (err) {
+    console.error("Seeding error:", err.message);
   }
 };
 
@@ -152,21 +107,19 @@ app.use("/api/users", require("./routes/users"));
 // One-time setup endpoint — creates initial manager only if none exists
 app.get("/api/setup", async (req, res) => {
   try {
-    const User = require("./models/User");
-    const existing = await User.findOne({ role: "manager" });
+    const existing = memoryDB.findUserByEmail("shahd@gmail.com");
     if (existing) {
       return res.json({
         message: "Setup already done. Manager already exists.",
       });
     }
-    const user = new User({
+    const user = memoryDB.createUser({
       name: "Shahd",
       email: "shahd@gmail.com",
       password: "Shahd$",
       role: "manager",
       position: "Manager",
     });
-    await user.save();
     res.json({ message: "✅ Manager created: shahd@gmail.com / Shahd$" });
   } catch (err) {
     res.status(500).json({ message: err.message });
