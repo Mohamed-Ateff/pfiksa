@@ -11,7 +11,7 @@ const backupDir = path.join(__dirname, "backups");
 const dataDir = path.join(__dirname, "..", "data-backups");
 
 // Ensure backup directories exist
-[backupDir, dataDir].forEach(dir => {
+[backupDir, dataDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -21,24 +21,27 @@ async function createBackup() {
   try {
     const User = require("./models/User");
     const Report = require("./models/Report");
-    
+
     // Use existing mongoose connection instead of creating new one
     if (mongoose.connection.readyState !== 1) {
       throw new Error("MongoDB not connected");
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
-    
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, -5);
+
     // Export data as JSON
     const users = await User.find({});
     const reports = await Report.find({});
-    
+
     const backup = {
       timestamp: new Date().toISOString(),
       version: "1.0",
       data: {
-        users: users.map(u => u.toObject()),
-        reports: reports.map(r => r.toObject()),
+        users: users.map((u) => u.toObject()),
+        reports: reports.map((r) => r.toObject()),
       },
       stats: {
         userCount: users.length,
@@ -74,9 +77,9 @@ async function createBackup() {
 async function restoreBackup(backupFile) {
   try {
     console.log(`🔄 Restoring from: ${backupFile}`);
-    
+
     const backupData = JSON.parse(fs.readFileSync(backupFile, "utf8"));
-    
+
     // Use existing mongoose connection instead of creating new one
     if (mongoose.connection.readyState !== 1) {
       throw new Error("MongoDB not connected");
@@ -112,14 +115,15 @@ async function restoreBackup(backupFile) {
 }
 
 function cleanOldBackups(dir, keepCount) {
-  const files = fs.readdirSync(dir)
-    .filter(f => f.startsWith("backup-") || f.startsWith("dump-"))
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => f.startsWith("backup-") || f.startsWith("dump-"))
     .sort()
     .reverse();
 
   if (files.length > keepCount) {
     const toDelete = files.slice(keepCount);
-    toDelete.forEach(file => {
+    toDelete.forEach((file) => {
       const filePath = path.join(dir, file);
       try {
         fs.rmSync(filePath, { recursive: true, force: true });
@@ -137,21 +141,21 @@ module.exports = { createBackup, restoreBackup, cleanOldBackups };
 // If run directly
 if (require.main === module) {
   const command = process.argv[2];
-  
+
   if (command === "create") {
     createBackup()
       .then(() => console.log("✅ Backup complete"))
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
         process.exit(1);
       });
   } else if (command === "restore" && process.argv[3]) {
     restoreBackup(process.argv[3])
-      .then(stats => {
+      .then((stats) => {
         console.log("✅ Restore complete", stats);
         process.exit(0);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
         process.exit(1);
       });

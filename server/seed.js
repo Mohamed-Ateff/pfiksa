@@ -56,10 +56,10 @@ async function seed() {
 
     console.log("\n✅ Database seeded successfully!");
     console.log("\nTest Accounts:");
-    testUsers.forEach(user => {
+    testUsers.forEach((user) => {
       console.log(`  📧 ${user.email} | 🔑 ${user.password} | 👤 ${user.role}`);
     });
-    
+
     await mongoose.disconnect();
   } catch (err) {
     console.error("❌ Seeding error:", err.message);

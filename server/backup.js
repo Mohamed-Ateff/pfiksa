@@ -15,14 +15,16 @@ const backupPath = path.join(backupDir, `backup-${timestamp}`);
 
 try {
   console.log("📦 Creating database backup...");
-  execSync(`mongodump --db employee-reports --out "${backupPath}"`, { stdio: "inherit" });
+  execSync(`mongodump --db employee-reports --out "${backupPath}"`, {
+    stdio: "inherit",
+  });
   console.log(`✅ Backup created: ${backupPath}`);
-  
+
   // Keep only last 7 backups (delete older ones)
   const files = fs.readdirSync(backupDir).sort().reverse();
   if (files.length > 7) {
     const toDelete = files.slice(7);
-    toDelete.forEach(file => {
+    toDelete.forEach((file) => {
       const deletePath = path.join(backupDir, file);
       fs.rmSync(deletePath, { recursive: true });
       console.log(`🗑️  Deleted old backup: ${file}`);

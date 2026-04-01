@@ -58,21 +58,24 @@ async function migrateToAtlas() {
     }
 
     console.log("✅ Migration completed successfully!");
-    console.log(`   Migrated: ${users.length} users, ${reports.length} reports`);
+    console.log(
+      `   Migrated: ${users.length} users, ${reports.length} reports`,
+    );
 
     await localConn.close();
     await atlasConn.close();
-
   } catch (err) {
     console.error("❌ Migration error:", err.message);
     console.log("⚠️  Migration failed, but continuing with Atlas setup");
   }
 }
 
-migrateToAtlas().then(() => {
-  console.log("🎯 Migration process complete");
-  process.exit(0);
-}).catch(err => {
-  console.error("Migration failed:", err);
-  process.exit(1);
-});
+migrateToAtlas()
+  .then(() => {
+    console.log("🎯 Migration process complete");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("Migration failed:", err);
+    process.exit(1);
+  });

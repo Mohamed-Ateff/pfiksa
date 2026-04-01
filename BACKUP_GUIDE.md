@@ -5,6 +5,7 @@
 ✅ **Local MongoDB**: `mongodb://localhost:27017/employee-reports`  
 ✅ **Automatic Backups**: Every 12 hours + on every server restart  
 ✅ **Backup Locations**:
+
 - JSON backups: `server/backups/` (last 30 kept)
 - MongoDB dumps: `data-backups/` (last 30 kept)
 
@@ -13,18 +14,21 @@
 ## How to Use Backups
 
 ### Create a Manual Backup NOW:
+
 ```bash
 cd server
 npm run backup:create
 ```
 
 ### Restore from Backup File:
+
 ```bash
 cd server
 npm run backup:restore ../data-backups/backup-2026-04-01T01-50-43.json
 ```
 
 ### View Available Backups:
+
 ```bash
 dir server\backups\
 dir data-backups\
@@ -84,6 +88,7 @@ NODE_ENV=development
 ```
 
 **Benefits:**
+
 - ✅ Automatic daily backups by MongoDB
 - ✅ Data accessible from anywhere
 - ✅ 30-day backup retention
@@ -96,11 +101,13 @@ NODE_ENV=development
 ### If Local MongoDB Corrupted:
 
 1. **Stop the app**
+
    ```bash
    Ctrl + C
    ```
 
 2. **Restore from backup**
+
    ```bash
    cd server
    npm run backup:restore ../data-backups/backup-2026-04-01T01-50-43.json
@@ -114,6 +121,7 @@ NODE_ENV=development
 ### If Need Older Data:
 
 1. Check backup files:
+
    ```bash
    dir data-backups\
    ```
@@ -154,6 +162,7 @@ Format: `backup-YYYY-MM-DDTHH-MM-SS.json`
 Example: `backup-2026-04-01T01-50-43.json`
 
 Backup contains:
+
 - All user accounts
 - All reports
 - Timestamps
