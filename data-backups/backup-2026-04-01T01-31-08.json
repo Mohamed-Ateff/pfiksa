@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-04-01T01:31:08.556Z",
+  "version": "1.0",
+  "data": {
+    "users": [
+      {
+        "_id": "69cc6561e7d8ad4277bf8a71",
+        "name": "Shahd",
+        "email": "shahd@gmail.com",
+        "role": "manager",
+        "position": "Manager",
+        "createdAt": "2026-04-01T00:22:57.724Z",
+        "__v": 0
+      }
+    ],
+    "reports": []
+  },
+  "stats": {
+    "userCount": 1,
+    "reportCount": 0
+  }
+}
