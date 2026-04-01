@@ -71,10 +71,6 @@ const connectDB = async () => {
     return false; // Failed
   }
 };
-    console.error(`❌ Failed to connect to MongoDB: ${err.message}`);
-    return false; // Failed
-  }
-};
 
 // Seed initial data
 const seedInitialData = async () => {
