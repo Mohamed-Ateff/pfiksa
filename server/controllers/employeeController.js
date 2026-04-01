@@ -1,9 +1,12 @@
-const User = require("../models/User");
+const memoryDB = require("../memoryDB");
 
 // Get all employees (manager only)
 exports.getAllEmployees = async (req, res) => {
   try {
-    const employees = await User.find({ role: "employee" }).select("-password");
+    const employees = memoryDB
+      .findAllUsers()
+      .filter((u) => u.role === "employee")
+      .map(({ password, ...rest }) => rest);
 
     res.status(200).json(employees);
   } catch (error) {
@@ -15,12 +18,13 @@ exports.getAllEmployees = async (req, res) => {
 exports.getEmployeeById = async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const employee = await User.findById(employeeId).select("-password");
+    const user = memoryDB.findUserById(Number(employeeId));
 
-    if (!employee) {
+    if (!user) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
+    const { password, ...employee } = user;
     res.status(200).json(employee);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,18 +37,18 @@ exports.updateEmployee = async (req, res) => {
     const { employeeId } = req.params;
     const { name, position } = req.body;
 
-    if (employeeId !== req.userId.toString() && req.userRole !== "manager") {
+    if (Number(employeeId) !== req.userId && req.userRole !== "manager") {
       return res
         .status(403)
         .json({ message: "Not authorized to update this employee" });
     }
 
-    const employee = await User.findByIdAndUpdate(
-      employeeId,
-      { name, position },
-      { new: true },
-    ).select("-password");
+    const updated = memoryDB.updateUser(Number(employeeId), { name, position });
+    if (!updated) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
 
+    const { password, ...employee } = updated;
     res.status(200).json({
       message: "Employee updated successfully",
       employee,

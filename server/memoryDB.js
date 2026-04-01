@@ -18,6 +18,14 @@ class MemoryDB {
       if (fs.existsSync(filePath)) {
         const content = fs.readFileSync(filePath, "utf-8");
         this.data = JSON.parse(content);
+        // Restore idCounter to avoid ID collisions after restart
+        const allIds = [
+          ...this.data.users.map((u) => u._id),
+          ...this.data.reports.map((r) => r._id),
+        ].filter((id) => typeof id === "number");
+        if (allIds.length > 0) {
+          this.idCounter = Math.max(...allIds) + 1;
+        }
         console.log("✅ Loaded data from backup");
       }
     } catch (err) {
