@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
-const { MongoMemoryServer } = require("mongodb-memory-server");
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
@@ -15,31 +14,55 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection - use in-memory database for stability (Production-Ready)
+// MongoDB Connection - hybrid approach: Memory Server for dev, Atlas for prod
 let mongoServer;
 const connectDB = async () => {
   try {
-    console.log(
-      `[${new Date().toLocaleTimeString()}] Starting MongoDB Memory Server...`,
-    );
+    const isProduction = process.env.NODE_ENV === "production";
+    let mongoUri = process.env.MONGODB_URI;
 
-    // Start in-memory MongoDB server
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
+    // If in production but no MONGODB_URI, try to use MongoDB Memory Server as fallback
+    if (!mongoUri) {
+      if (isProduction) {
+        console.error("❌ MONGODB_URI not set in production. Using in-memory database...");
+        try {
+          const { MongoMemoryServer } = require("mongodb-memory-server");
+          mongoServer = await MongoMemoryServer.create();
+          mongoUri = mongoServer.getUri();
+          console.log("✅ MongoDB Memory Server started as fallback");
+        } catch (err) {
+          throw new Error(`Cannot connect to MongoDB: ${err.message}`);
+        }
+      } else {
+        // Development: use in-memory database
+        try {
+          const { MongoMemoryServer } = require("mongodb-memory-server");
+          console.log(`[${new Date().toLocaleTimeString()}] Starting MongoDB Memory Server...`);
+          mongoServer = await MongoMemoryServer.create();
+          mongoUri = mongoServer.getUri();
+          console.log("✅ MongoDB Memory Server connected successfully");
+        } catch (err) {
+          throw new Error(`Cannot start MongoDB Memory Server: ${err.message}`);
+        }
+      }
+    } else {
+      console.log(
+        `[${new Date().toLocaleTimeString()}] Connecting to MongoDB at ${mongoUri.substring(0, 50)}...`
+      );
+    }
 
-    console.log(
-      `[${new Date().toLocaleTimeString()}] Connecting to in-memory MongoDB...`,
-    );
     await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
     });
 
-    console.log("✅ MongoDB Memory Server connected successfully");
+    console.log("✅ MongoDB connected successfully");
 
     // Add connection event listeners
     mongoose.connection.on("disconnected", () => {
-      console.warn("⚠️ MongoDB disconnected. Attempts to reconnect...");
+      console.warn("⚠️ MongoDB disconnected. Attempting to reconnect...");
     });
 
     mongoose.connection.on("reconnected", () => {
@@ -57,7 +80,7 @@ const connectDB = async () => {
 
     return true; // Success
   } catch (err) {
-    console.error(`❌ Failed to start MongoDB Memory Server: ${err.message}`);
+    console.error(`❌ Failed to connect to MongoDB: ${err.message}`);
     return false; // Failed
   }
 };
