@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-04-01T01:54:35.635Z",
+  "version": "1.0",
+  "data": {
+    "users": [
+      {
+        "_id": "69cc7ad9fc4fd680abc41da5",
+        "name": "Shahd",
+        "email": "shahd@gmail.com",
+        "role": "manager",
+        "position": "Manager",
+        "createdAt": "2026-04-01T01:54:33.366Z",
+        "__v": 0
+      },
+      {
+        "_id": "69cc7ad9fc4fd680abc41da8",
+        "name": "Shahd One",
+        "email": "shahd1@gmail.com",
+        "role": "employee",
+        "position": "Developer",
+        "createdAt": "2026-04-01T01:54:33.448Z",
+        "__v": 0
+      },
+      {
+        "_id": "69cc7ad9fc4fd680abc41daa",
+        "name": "John Doe",
+        "email": "john@gmail.com",
+        "role": "employee",
+        "position": "Designer",
+        "createdAt": "2026-04-01T01:54:33.507Z",
+        "__v": 0
+      },
+      {
+        "_id": "69cc7ad9fc4fd680abc41dac",
+        "name": "Jane Smith",
+        "email": "jane@gmail.com",
+        "role": "employee",
+        "position": "Project Manager",
+        "createdAt": "2026-04-01T01:54:33.563Z",
+        "__v": 0
+      }
+    ],
+    "reports": []
+  },
+  "stats": {
+    "userCount": 4,
+    "reportCount": 0
+  }
+}
