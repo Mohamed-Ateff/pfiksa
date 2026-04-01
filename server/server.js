@@ -6,6 +6,9 @@ const path = require("path");
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
+// Import memory database
+const memoryDB = require("./memoryDB");
+
 const app = express();
 
 // Middleware
@@ -14,114 +17,129 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection - In-Memory (works everywhere, no setup)
+// MongoDB Connection - use real MongoDB if available, fallback to memory DB
 let mongoServer;
+let useMemoryDB = false;
+
 const connectDB = async () => {
   try {
-    console.log(
-      `[${new Date().toLocaleTimeString()}] Starting In-Memory Database...`
-    );
+    console.log(`[${new Date().toLocaleTimeString()}] Connecting to database...`);
 
-    // Use in-memory MongoDB - works on Render, local, everywhere
-    const { MongoMemoryServer } = require("mongodb-memory-server");
-    
-    try {
-      mongoServer = await MongoMemoryServer.create({
-        instance: {
-          port: 27017,
-        },
+    // Try MongoDB first
+    if (process.env.MONGODB_URI) {
+      console.log("Connecting to MongoDB...");
+      await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
       });
-    } catch (err) {
-      // If MongoMemoryServer fails, try standard method
-      console.warn("Fallback: Using standard in-memory setup");
-      mongoServer = await MongoMemoryServer.create();
+      console.log("✅ MongoDB connected");
+    } else {
+      // Try in-memory MongoDB
+      try {
+        console.log("Starting in-memory MongoDB...");
+        const { MongoMemoryServer } = require("mongodb-memory-server");
+        mongoServer = await MongoMemoryServer.create();
+        const mongoUri = mongoServer.getUri();
+        await mongoose.connect(mongoUri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+        });
+        console.log("✅ In-Memory MongoDB connected");
+      } catch (mongoErr) {
+        console.warn("MongoDB not available, using pure memory database");
+        useMemoryDB = true;
+      }
     }
-
-    const mongoUri = mongoServer.getUri();
-
-    console.log(
-      `[${new Date().toLocaleTimeString()}] Connecting to In-Memory Database...`
-    );
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
-    console.log("✅ Database connected successfully");
-
-    // Add connection event listeners
-    mongoose.connection.on("disconnected", () => {
-      console.warn("⚠️ Database disconnected");
-    });
-
-    mongoose.connection.on("reconnected", () => {
-      console.log("✅ Database reconnected");
-    });
-
-    mongoose.connection.on("error", (err) => {
-      console.error("Database error:", err.message);
-    });
 
     // Seed initial data
     await seedInitialData();
-
-    return true; // Success
+    return true;
   } catch (err) {
-    console.error(`❌ Failed to connect to database: ${err.message}`);
-    return false; // Failed
+    console.error(`❌ Database error: ${err.message}`);
+    console.warn("Using pure memory database as fallback");
+    useMemoryDB = true;
+    await seedInitialData();
+    return true;
   }
 };
 
 // Seed initial data
 const seedInitialData = async () => {
   try {
-    const User = require("./models/User");
-    const count = await User.countDocuments();
-
-    if (count === 0) {
-      console.log("📊 Seeding initial test users...");
+    if (useMemoryDB) {
+      // Seed memory database
       const testUsers = [
         {
-          name: "Shahd",
           email: "shahd@gmail.com",
           password: "Shahd$",
+          name: "Shahd",
           role: "manager",
           position: "Manager",
         },
         {
-          name: "Shahd One",
           email: "shahd1@gmail.com",
           password: "Shahd$1",
+          name: "Shahd One",
           role: "employee",
           position: "Developer",
         },
-        {
-          name: "John Doe",
-          email: "john@gmail.com",
-          password: "John123456",
-          role: "employee",
-          position: "Designer",
-        },
-        {
-          name: "Jane Smith",
-          email: "jane@gmail.com",
-          password: "Jane123456",
-          role: "employee",
-          position: "Project Manager",
-        },
       ];
 
-      for (const userData of testUsers) {
-        const user = new User(userData);
-        await user.save();
+      const existingUser = memoryDB.findUserByEmail("shahd@gmail.com");
+      if (!existingUser) {
+        for (const userData of testUsers) {
+          memoryDB.createUser(userData);
+        }
+        console.log("✅ Memory DB seeded with test users");
       }
-      console.log("✅ Test users created:");
-      testUsers.forEach((u) =>
-        console.log(`   📧 ${u.email} | 🔑 ${u.password}`),
-      );
-    }
-  } catch (err) {
-    console.error("Seeding error:", err.message);
+    } else {
+      // Seed MongoDB
+      const User = require("./models/User");
+      const count = await User.countDocuments();
+
+      if (count === 0) {
+        console.log("📊 Seeding initial test users...");
+        const testUsers = [
+          {
+            name: "Shahd",
+            email: "shahd@gmail.com",
+            password: "Shahd$",
+            role: "manager",
+            position: "Manager",
+          },
+          {
+            name: "Shahd One",
+            email: "shahd1@gmail.com",
+            password: "Shahd$1",
+            role: "employee",
+            position: "Developer",
+          },
+          {
+            name: "John Doe",
+            email: "john@gmail.com",
+            password: "John123456",
+            role: "employee",
+            position: "Designer",
+          },
+          {
+            name: "Jane Smith",
+            email: "jane@gmail.com",
+            password: "Jane123456",
+            role: "employee",
+            position: "Project Manager",
+          },
+        ];
+
+        for (const userData of testUsers) {
+          const user = new User(userData);
+          await user.save();
+        }
+        console.log("✅ Test users created:");
+        testUsers.forEach((u) =>
+          console.log(`   📧 ${u.email} | 🔑 ${u.password}`),
+        );
+      }
   }
 };
 

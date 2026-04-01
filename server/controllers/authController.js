@@ -1,30 +1,62 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const bcryptjs = require("bcryptjs");
+const memoryDB = require("../memoryDB");
 
-// Manager creates a user
-exports.createUser = async (req, res) => {
+// Check if we're using memory database
+let useMemoryDB = false;
+
+// Login
+exports.login = async (req, res) => {
   try {
-    const { name, email, password, role, position } = req.body;
+    const { email, password } = req.body;
 
-    // Check if user exists
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(409).json({ message: "User already exists" });
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Please provide email and password" });
     }
 
-    // Create new user
-    user = new User({
-      name,
-      email,
-      password,
-      role: role || "employee",
-      position,
-    });
+    // Try memory DB first if available
+    let user = memoryDB.findUserByEmail(email);
+    
+    if (!user) {
+      // Try MongoDB
+      try {
+        user = await User.findOne({ email });
+      } catch (err) {
+        useMemoryDB = true;
+      }
+    }
 
-    await user.save();
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    res.status(201).json({
-      message: "User created successfully",
+    // Compare password
+    let isPasswordValid = false;
+    if (useMemoryDB || !user.comparePassword) {
+      // Direct comparison for memory DB
+      isPasswordValid = password === user.password;
+    } else {
+      // Use bcrypt for MongoDB users
+      isPasswordValid = await user.comparePassword(password);
+    }
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || "default_secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -37,17 +69,6 @@ exports.createUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Login
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Please provide email and password" });
-    }
 
     // Check for user
     const user = await User.findOne({ email }).select("+password");
