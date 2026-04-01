@@ -3,7 +3,7 @@ class MemoryDB {
   constructor() {
     this.data = {
       users: [],
-      reports: []
+      reports: [],
     };
     this.idCounter = 1;
     this.loadData();
@@ -42,7 +42,7 @@ class MemoryDB {
 
   // User methods
   findUserByEmail(email) {
-    return this.data.users.find(u => u.email === email);
+    return this.data.users.find((u) => u.email === email);
   }
 
   createUser(userData) {
@@ -57,7 +57,7 @@ class MemoryDB {
   }
 
   findUserById(id) {
-    return this.data.users.find(u => u._id === id);
+    return this.data.users.find((u) => u._id === id);
   }
 
   updateUser(id, updates) {
@@ -75,7 +75,7 @@ class MemoryDB {
   }
 
   deleteUser(email) {
-    const index = this.data.users.findIndex(u => u.email === email);
+    const index = this.data.users.findIndex((u) => u.email === email);
     if (index !== -1) {
       this.data.users.splice(index, 1);
       this.saveData();
@@ -97,7 +97,7 @@ class MemoryDB {
   }
 
   findReportsByEmployee(employeeId) {
-    return this.data.reports.filter(r => r.employeeId === employeeId);
+    return this.data.reports.filter((r) => r.employeeId === employeeId);
   }
 
   findAllReports() {
@@ -105,7 +105,7 @@ class MemoryDB {
   }
 
   updateReport(id, updates) {
-    const report = this.data.reports.find(r => r._id === id);
+    const report = this.data.reports.find((r) => r._id === id);
     if (report) {
       Object.assign(report, updates);
       this.saveData();
@@ -115,7 +115,7 @@ class MemoryDB {
   }
 
   deleteReport(id) {
-    const index = this.data.reports.findIndex(r => r._id === id);
+    const index = this.data.reports.findIndex((r) => r._id === id);
     if (index !== -1) {
       this.data.reports.splice(index, 1);
       this.saveData();
