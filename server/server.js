@@ -14,50 +14,37 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection - file-based database for production (zero setup)
+// MongoDB Connection - In-Memory (works everywhere, no setup)
 let mongoServer;
 const connectDB = async () => {
   try {
-    const isProduction = process.env.NODE_ENV === "production";
-    let mongoUri = process.env.MONGODB_URI;
+    console.log(
+      `[${new Date().toLocaleTimeString()}] Starting In-Memory Database...`
+    );
 
-    // Use in-memory for development, file-based for production
-    if (!mongoUri) {
-      if (!isProduction) {
-        // Development: in-memory
-        try {
-          const { MongoMemoryServer } = require("mongodb-memory-server");
-          console.log(`[${new Date().toLocaleTimeString()}] Starting In-Memory Database...`);
-          mongoServer = await MongoMemoryServer.create({ instance: { port: 27017 } });
-          mongoUri = mongoServer.getUri();
-          console.log("✅ Database connected (in-memory)");
-        } catch (err) {
-          console.error(`Cannot start in-memory DB: ${err.message}`);
-          console.error("Trying local MongoDB...");
-          mongoUri = "mongodb://localhost:27017/employee-reports";
-        }
-      } else {
-        // Production: use MongoDB Compass JSON file storage (localhost)
-        // This starts a built-in memory instance on Render
-        console.log("Starting production database...");
-        const { MongoMemoryServer } = require("mongodb-memory-server");
-        mongoServer = await MongoMemoryServer.create({
-          instance: {
-            port: 27017,
-            dbPath: "/tmp/mongodata",
-          },
-        });
-        mongoUri = mongoServer.getUri();
-        console.log("✅ Production database ready");
-      }
+    // Use in-memory MongoDB - works on Render, local, everywhere
+    const { MongoMemoryServer } = require("mongodb-memory-server");
+    
+    try {
+      mongoServer = await MongoMemoryServer.create({
+        instance: {
+          port: 27017,
+        },
+      });
+    } catch (err) {
+      // If MongoMemoryServer fails, try standard method
+      console.warn("Fallback: Using standard in-memory setup");
+      mongoServer = await MongoMemoryServer.create();
     }
 
-    console.log(`[${new Date().toLocaleTimeString()}] Connecting to database...`);
+    const mongoUri = mongoServer.getUri();
+
+    console.log(
+      `[${new Date().toLocaleTimeString()}] Connecting to In-Memory Database...`
+    );
     await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000,
     });
 
     console.log("✅ Database connected successfully");
@@ -75,11 +62,15 @@ const connectDB = async () => {
       console.error("Database error:", err.message);
     });
 
-    // Always seed data if no users exist
+    // Seed initial data
     await seedInitialData();
 
-    return true;
+    return true; // Success
   } catch (err) {
+    console.error(`❌ Failed to connect to database: ${err.message}`);
+    return false; // Failed
+  }
+};
     console.error(`❌ Failed to connect to MongoDB: ${err.message}`);
     return false; // Failed
   }
