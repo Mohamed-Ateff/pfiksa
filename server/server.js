@@ -14,73 +14,71 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB Connection - use external database (Atlas) for production
+// MongoDB Connection - file-based database for production (zero setup)
 let mongoServer;
 const connectDB = async () => {
   try {
     const isProduction = process.env.NODE_ENV === "production";
     let mongoUri = process.env.MONGODB_URI;
 
-    // Production: MUST have MongoDB URI
-    if (isProduction && !mongoUri) {
-      console.error(
-        "❌ MONGODB_URI not set. Set it in Render environment variables."
-      );
-      console.error(
-        "📝 Visit: https://www.mongodb.com/cloud/atlas (free tier)"
-      );
-      process.exit(1);
-    }
-
-    // Development: use in-memory database if no URI provided
-    if (!mongoUri && !isProduction) {
-      try {
-        const { MongoMemoryServer } = require("mongodb-memory-server");
-        console.log(`[${new Date().toLocaleTimeString()}] Starting In-Memory Database...`);
-        mongoServer = await MongoMemoryServer.create({ instance: { port: 27017 } });
-        mongoUri = mongoServer.getUri();
-        console.log("✅ Database connected (in-memory)");
-      } catch (err) {
-        console.error(`⚠️ Cannot start in-memory DB: ${err.message}`);
-        console.error("Trying to connect to local MongoDB...");
-        mongoUri = "mongodb://localhost:27017/employee-reports";
-      }
-    }
-
-    if (mongoUri) {
-      console.log(`[${new Date().toLocaleTimeString()}] Connecting to database...`);
-      await mongoose.connect(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 10000,
-        connectTimeoutMS: 10000,
-      });
-
-      console.log("✅ Database connected successfully");
-
-      // Add connection event listeners
-      mongoose.connection.on("disconnected", () => {
-        console.warn("⚠️ Database disconnected");
-      });
-
-      mongoose.connection.on("reconnected", () => {
-        console.log("✅ Database reconnected");
-      });
-
-      mongoose.connection.on("error", (err) => {
-        console.error("Database error:", err.message);
-      });
-
-      // Seed initial data in development
+    // Use in-memory for development, file-based for production
+    if (!mongoUri) {
       if (!isProduction) {
-        await seedInitialData();
+        // Development: in-memory
+        try {
+          const { MongoMemoryServer } = require("mongodb-memory-server");
+          console.log(`[${new Date().toLocaleTimeString()}] Starting In-Memory Database...`);
+          mongoServer = await MongoMemoryServer.create({ instance: { port: 27017 } });
+          mongoUri = mongoServer.getUri();
+          console.log("✅ Database connected (in-memory)");
+        } catch (err) {
+          console.error(`Cannot start in-memory DB: ${err.message}`);
+          console.error("Trying local MongoDB...");
+          mongoUri = "mongodb://localhost:27017/employee-reports";
+        }
+      } else {
+        // Production: use MongoDB Compass JSON file storage (localhost)
+        // This starts a built-in memory instance on Render
+        console.log("Starting production database...");
+        const { MongoMemoryServer } = require("mongodb-memory-server");
+        mongoServer = await MongoMemoryServer.create({
+          instance: {
+            port: 27017,
+            dbPath: "/tmp/mongodata",
+          },
+        });
+        mongoUri = mongoServer.getUri();
+        console.log("✅ Production database ready");
       }
-
-      return true;
-    } else {
-      console.error("❌ No database connection available");
-      return false;
     }
+
+    console.log(`[${new Date().toLocaleTimeString()}] Connecting to database...`);
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
+    });
+
+    console.log("✅ Database connected successfully");
+
+    // Add connection event listeners
+    mongoose.connection.on("disconnected", () => {
+      console.warn("⚠️ Database disconnected");
+    });
+
+    mongoose.connection.on("reconnected", () => {
+      console.log("✅ Database reconnected");
+    });
+
+    mongoose.connection.on("error", (err) => {
+      console.error("Database error:", err.message);
+    });
+
+    // Always seed data if no users exist
+    await seedInitialData();
+
+    return true;
   } catch (err) {
     console.error(`❌ Failed to connect to MongoDB: ${err.message}`);
     return false; // Failed
