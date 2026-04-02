@@ -17,9 +17,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import EditIcon from "@mui/icons-material/Edit";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +44,15 @@ function EmployeeDashboard() {
   const [success, setSuccess] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [activeReport, setActiveReport] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState(null);
+  const [editForm, setEditForm] = useState({
+    completedTasks: "",
+    inProgressTasks: "",
+    commitments: "",
+    challenges: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { lang, setLang, t } = useLanguage();
@@ -105,16 +116,28 @@ function EmployeeDashboard() {
         }
       }
 
-      const { error } = await supabase.from("reports").insert({
-        employee_id: user.id,
-        date: new Date().toISOString().split("T")[0],
-        completed_tasks: formData.completedTasks,
-        in_progress_tasks: formData.inProgressTasks,
-        commitments: formData.commitments,
-        challenges: formData.challenges,
-        files: uploadedFiles,
-      });
+      const { data: insertedReport, error } = await supabase
+        .from("reports")
+        .insert({
+          employee_id: user.id,
+          date: new Date().toISOString().split("T")[0],
+          completed_tasks: formData.completedTasks,
+          in_progress_tasks: formData.inProgressTasks,
+          commitments: formData.commitments,
+          challenges: formData.challenges,
+          files: uploadedFiles,
+        })
+        .select()
+        .single();
       if (error) throw error;
+      try {
+        await supabase.from("notifications").insert({
+          report_id: insertedReport.id,
+          employee_id: user.id,
+          employee_name: user.name || user.email || "",
+          type: "new_report",
+        });
+      } catch (_) {}
 
       setSuccess(t("employee.reportSubmitted"));
       setFormData({
@@ -158,6 +181,59 @@ function EmployeeDashboard() {
 
   const handleCloseReport = () => {
     setActiveReport(null);
+  };
+
+  const handleEditOpen = (report, e) => {
+    if (e) e.stopPropagation();
+    setEditingReport(report);
+    setEditForm({
+      completedTasks: report.completed_tasks || "",
+      inProgressTasks: report.in_progress_tasks || "",
+      commitments: report.commitments || "",
+      challenges: report.challenges || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSave = async () => {
+    if (!editingReport) return;
+    setEditLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const { error } = await supabase
+        .from("reports")
+        .update({
+          completed_tasks: editForm.completedTasks,
+          in_progress_tasks: editForm.inProgressTasks,
+          commitments: editForm.commitments,
+          challenges: editForm.challenges,
+          is_edited: true,
+        })
+        .eq("id", editingReport.id);
+      if (error) throw error;
+      try {
+        await supabase.from("notifications").insert({
+          report_id: editingReport.id,
+          employee_id: user.id,
+          employee_name: user.name || user.email || "",
+          type: "edited_report",
+        });
+      } catch (_) {}
+      setSuccess(t("employee.reportUpdated"));
+      setEditOpen(false);
+      setEditingReport(null);
+      fetchReports();
+    } catch (err) {
+      setError(err.message || t("employee.reportUpdateError"));
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   return (
@@ -1029,6 +1105,30 @@ function EmployeeDashboard() {
                           ? `${report.completed_tasks.slice(0, 120)}...`
                           : t("employee.noTasks")}
                       </Typography>
+                      <Stack direction="row" justifyContent="flex-end">
+                        <Tooltip title={t("employee.editReport")}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleEditOpen(report, e)}
+                            sx={{
+                              color: "#118dd3",
+                              border: "1px solid rgba(17, 141, 211, 0.4)",
+                              backgroundColor: isDark
+                                ? "rgba(17, 141, 211, 0.08)"
+                                : "rgba(17, 141, 211, 0.05)",
+                              width: 32,
+                              height: 32,
+                              "&:hover": {
+                                backgroundColor: isDark
+                                  ? "rgba(17, 141, 211, 0.15)"
+                                  : "rgba(17, 141, 211, 0.1)",
+                              },
+                            }}
+                          >
+                            <EditIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </Stack>
                   </Paper>
                 </Grid>
@@ -1045,6 +1145,113 @@ function EmployeeDashboard() {
               </Button>
               <Button onClick={handleDelete} color="error" variant="contained">
                 {t("common.delete")}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={editOpen}
+            onClose={() => setEditOpen(false)}
+            fullWidth
+            maxWidth="md"
+          >
+            <DialogTitle sx={{ pb: 0 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                {t("employee.editReport")}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {editingReport
+                  ? new Date(editingReport.created_at).toLocaleDateString()
+                  : ""}
+              </Typography>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t("employee.completedTasksLabel")}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    name="completedTasks"
+                    value={editForm.completedTasks}
+                    onChange={handleEditChange}
+                    required
+                    inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
+                    sx={{
+                      "& textarea": { textAlign: isRtl ? "right" : "left" },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t("employee.inProgressLabel")}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    name="inProgressTasks"
+                    value={editForm.inProgressTasks}
+                    onChange={handleEditChange}
+                    inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
+                    sx={{
+                      "& textarea": { textAlign: isRtl ? "right" : "left" },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t("employee.commitmentsLabel")}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    name="commitments"
+                    value={editForm.commitments}
+                    onChange={handleEditChange}
+                    inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
+                    sx={{
+                      "& textarea": { textAlign: isRtl ? "right" : "left" },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t("employee.challengesLabel")}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    name="challenges"
+                    value={editForm.challenges}
+                    onChange={handleEditChange}
+                    inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
+                    sx={{
+                      "& textarea": { textAlign: isRtl ? "right" : "left" },
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setEditOpen(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={handleEditSave}
+                variant="contained"
+                disabled={editLoading}
+              >
+                {editLoading ? (
+                  <CircularProgress size={22} />
+                ) : (
+                  t("common.saveChanges")
+                )}
               </Button>
             </DialogActions>
           </Dialog>
@@ -1241,6 +1448,18 @@ function EmployeeDashboard() {
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseReport}>{t("common.close")}</Button>
+              <Button
+                onClick={() => {
+                  if (activeReport) {
+                    handleCloseReport();
+                    handleEditOpen(activeReport);
+                  }
+                }}
+                variant="outlined"
+                startIcon={<EditIcon />}
+              >
+                {t("employee.editReport")}
+              </Button>
               <Button
                 onClick={() => {
                   if (activeReport?.id) {

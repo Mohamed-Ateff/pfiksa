@@ -37,5 +37,20 @@
       "createdAt": "2026-04-01T02:36:42.483Z"
     }
   ],
-  "reports": []
+  "reports": [
+    {
+      "_id": 5,
+      "employeeId": 2,
+      "completedTasks": "Fixed bug in auth module",
+      "inProgressTasks": "Working on dashboard",
+      "commitments": "Will finish by EOD",
+      "challenges": "None today",
+      "files": [],
+      "isChecked": false,
+      "checkedBy": null,
+      "checkedAt": null,
+      "approvalNotes": "",
+      "createdAt": "2026-04-01T12:37:27.814Z"
+    }
+  ]
 }

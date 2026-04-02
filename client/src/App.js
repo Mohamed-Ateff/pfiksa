@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ManagerDashboard from "./pages/BossDashboard";
 import UserManagement from "./pages/UserManagement";
+import Notifications from "./pages/Notifications";
 import { useAuth } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
 import { useThemeMode } from "./context/ThemeContext";
@@ -222,6 +223,16 @@ function App() {
             element={
               isAuthenticated && user?.role === "manager" ? (
                 <UserManagement />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              isAuthenticated && user?.role === "manager" ? (
+                <Notifications />
               ) : (
                 <Navigate to="/login" />
               )

@@ -14,6 +14,7 @@ import {
   Grid,
   Stack,
   Chip,
+  Badge,
   Tooltip,
   Dialog,
   DialogTitle,
@@ -23,6 +24,7 @@ import {
 import LogoutIcon from "@mui/icons-material/Logout";
 import PrintIcon from "@mui/icons-material/Print";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import { useReactToPrint } from "react-to-print";
@@ -44,6 +46,8 @@ function ManagerDashboard() {
   const [activeReport, setActiveReport] = useState(null);
   const [approvalNotes, setApprovalNotes] = useState("");
   const [printReport, setPrintReport] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
   const printRef = useRef();
   const navigate = useNavigate();
   const { logout, user, updateUser } = useAuth();
@@ -61,6 +65,21 @@ function ManagerDashboard() {
   useEffect(() => {
     fetchReports(selectedDate);
   }, [selectedDate]);
+
+  useEffect(() => {
+    fetchNotifications();
+    const channel = supabase
+      .channel("boss-notifications")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications" },
+        (payload) => {
+          setNotifications((prev) => [payload.new, ...prev]);
+        },
+      )
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   const fetchReports = async (date) => {
     setLoading(true);
@@ -89,10 +108,17 @@ function ManagerDashboard() {
         .select("*, employee:profiles!employee_id(id, name, email, position)")
         .single();
       if (error) throw error;
-      setReports(reports.map((r) => (r.id === reportId ? data : r)));
+      const updated = { ...data, is_edited: false };
+      setReports(reports.map((r) => (r.id === reportId ? updated : r)));
       if (activeReport?.id === reportId) {
-        setActiveReport(data);
+        setActiveReport(updated);
       }
+      // Clear is_edited flag (silent fail if column not yet migrated)
+      supabase
+        .from("reports")
+        .update({ is_edited: false })
+        .eq("id", reportId)
+        .catch(() => {});
     } catch (err) {
       setError(t("manager.errorUpdatingReport"));
     }
@@ -145,6 +171,36 @@ function ManagerDashboard() {
   const handlePrintReport = (report) => {
     setPrintReport(report);
     setTimeout(() => handlePrint(), 0);
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setNotifications(data || []);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    }
+  };
+
+  const handleOpenNotifications = async () => {
+    // Mark all as read, then navigate to notifications page
+    const unread = notifications.filter((n) => !n.is_read);
+    if (unread.length > 0) {
+      try {
+        await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("is_read", false);
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      } catch (err) {
+        console.error("Error marking notifications as read:", err);
+      }
+    }
+    navigate("/notifications");
   };
 
   return (
@@ -307,6 +363,39 @@ function ManagerDashboard() {
                       <DarkModeIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
                     )}
                   </IconButton>
+                  <Tooltip title={t("manager.notifications")}>
+                    <IconButton
+                      onClick={handleOpenNotifications}
+                      sx={{
+                        width: { xs: 38, sm: 44 },
+                        height: { xs: 38, sm: 44 },
+                        color: isDark ? "#ffffff" : "#333333",
+                        border:
+                          unreadCount > 0
+                            ? "1px solid #f2b45e"
+                            : isDark
+                              ? "1px solid #2a2f4f"
+                              : "1px solid #cccccc",
+                        backgroundColor:
+                          unreadCount > 0
+                            ? isDark
+                              ? "rgba(242, 180, 94, 0.15)"
+                              : "rgba(255, 152, 0, 0.08)"
+                            : isDark
+                              ? "#121421"
+                              : "#f5f5f5",
+                        "&:hover": {
+                          backgroundColor: isDark ? "#1f2440" : "#e0e0e0",
+                        },
+                      }}
+                    >
+                      <Badge badgeContent={unreadCount} color="error" max={99}>
+                        <NotificationsIcon
+                          sx={{ fontSize: { xs: 18, sm: 24 } }}
+                        />
+                      </Badge>
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title={t("manager.userManagementTooltip")}>
                     <IconButton
                       onClick={() => navigate("/user-management")}
@@ -645,6 +734,20 @@ function ManagerDashboard() {
                               border: "1px solid rgba(255, 255, 255, 0.08)",
                             }}
                           />
+                          {report.is_edited && (
+                            <Chip
+                              label={t("manager.edited")}
+                              size="small"
+                              sx={{
+                                backgroundColor: isDark
+                                  ? "rgba(255, 152, 0, 0.2)"
+                                  : "rgba(255, 152, 0, 0.1)",
+                                color: "#ff9800",
+                                border: "1px solid rgba(255, 152, 0, 0.4)",
+                                fontWeight: 700,
+                              }}
+                            />
+                          )}
                         </Stack>
                         <Typography
                           variant="body2"
@@ -835,6 +938,20 @@ function ManagerDashboard() {
                     <Typography variant="body2" color="text.secondary">
                       {t("employee.checked")}
                     </Typography>
+                  )}
+                  {activeReport?.is_edited && (
+                    <Chip
+                      label={t("manager.edited")}
+                      size="small"
+                      sx={{
+                        backgroundColor: isDark
+                          ? "rgba(255, 152, 0, 0.2)"
+                          : "rgba(255, 152, 0, 0.1)",
+                        color: "#ff9800",
+                        border: "1px solid rgba(255, 152, 0, 0.4)",
+                        fontWeight: 700,
+                      }}
+                    />
                   )}
                 </Stack>
               </Stack>

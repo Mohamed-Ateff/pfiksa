@@ -145,3 +145,41 @@ CREATE POLICY "storage_delete_own"
 -- ─── REALTIME ─────────────────────────────────────────────────
 ALTER PUBLICATION supabase_realtime ADD TABLE public.reports;
 
+-- ─── FEATURE UPDATE: REPORT EDITING + NOTIFICATIONS ──────────
+-- Run this block in Supabase SQL Editor once to enable the new features
+
+-- Allow employees to edit their own submitted reports
+CREATE POLICY "reports_update_own"
+  ON public.reports FOR UPDATE
+  USING (auth.uid() = employee_id);
+
+-- Track whether a report was edited after first submission
+ALTER TABLE public.reports ADD COLUMN IF NOT EXISTS is_edited BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Notifications table (manager gets alerted on new/edited reports)
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id     UUID        REFERENCES public.reports(id) ON DELETE CASCADE,
+  employee_id   UUID        REFERENCES public.profiles(id) ON DELETE CASCADE,
+  employee_name TEXT        NOT NULL DEFAULT '',
+  type          TEXT        NOT NULL DEFAULT 'new_report',
+  is_read       BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "notifications_select"
+  ON public.notifications FOR SELECT
+  USING (get_my_role() = 'manager' OR employee_id = auth.uid());
+
+CREATE POLICY "notifications_insert"
+  ON public.notifications FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "notifications_update"
+  ON public.notifications FOR UPDATE
+  USING (get_my_role() = 'manager');
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
