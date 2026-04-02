@@ -101,25 +101,31 @@ function ManagerDashboard() {
 
   const handleCheckboxChange = async (reportId, isChecked, notes = "") => {
     try {
-      const { data, error } = await supabase
+      // Step 1: update (don't chain .select() — multiple RLS policies can cause 0 rows returned)
+      const { error: updateError } = await supabase
         .from("reports")
-        .update({ is_checked: !isChecked, approval_note: notes })
-        .eq("id", reportId)
+        .update({
+          is_checked: !isChecked,
+          approval_note: notes,
+          is_edited: false,
+        })
+        .eq("id", reportId);
+      if (updateError) throw updateError;
+
+      // Step 2: fetch the updated row separately
+      const { data, error: fetchError } = await supabase
+        .from("reports")
         .select("*, employee:profiles!employee_id(id, name, email, position)")
-        .single();
-      if (error) throw error;
-      const updated = { ...data, is_edited: false };
-      setReports(reports.map((r) => (r.id === reportId ? updated : r)));
-      if (activeReport?.id === reportId) {
-        setActiveReport(updated);
-      }
-      // Clear is_edited flag (silent fail if column not yet migrated)
-      supabase
-        .from("reports")
-        .update({ is_edited: false })
         .eq("id", reportId)
-        .catch(() => {});
+        .single();
+      if (fetchError) throw fetchError;
+
+      setReports(reports.map((r) => (r.id === reportId ? data : r)));
+      if (activeReport?.id === reportId) {
+        setActiveReport(data);
+      }
     } catch (err) {
+      console.error("Error updating report:", err);
       setError(t("manager.errorUpdatingReport"));
     }
   };

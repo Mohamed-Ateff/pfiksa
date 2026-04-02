@@ -370,8 +370,7 @@ function Notifications() {
                   sx={{ mt: 0.5, fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
                 >
                   {notifications.length} {isRtl ? "إشعار" : "notifications"}{" "}
-                  &middot; {unreadCount}{" "}
-                  {isRtl ? "غير مقروء" : "unread"}
+                  &middot; {unreadCount} {isRtl ? "غير مقروء" : "unread"}
                 </Typography>
               </Box>
               {unreadCount > 0 && (
@@ -416,9 +415,7 @@ function Notifications() {
               <NotificationsIcon
                 sx={{
                   fontSize: 64,
-                  color: isDark
-                    ? "rgba(255,255,255,0.1)"
-                    : "rgba(0,0,0,0.08)",
+                  color: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
                   mb: 2,
                 }}
               />
@@ -452,9 +449,7 @@ function Notifications() {
                     borderLeft: notif.is_read
                       ? undefined
                       : `4px solid ${
-                          notif.type === "edited_report"
-                            ? "#ff9800"
-                            : "#118dd3"
+                          notif.type === "edited_report" ? "#ff9800" : "#118dd3"
                         }`,
                     boxShadow: notif.is_read
                       ? "none"
