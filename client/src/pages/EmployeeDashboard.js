@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Container,
   Box,
@@ -23,7 +23,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import { useNavigate } from "react-router-dom";
-import { reportService } from "../services/api";
+import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useThemeMode } from "../context/ThemeContext";
@@ -49,7 +49,7 @@ function EmployeeDashboard() {
   const isRtl = lang === "ar";
 
   const totalReports = reports.length;
-  const checkedReports = reports.filter((report) => report.isChecked).length;
+  const checkedReports = reports.filter((report) => report.is_checked).length;
   const pendingReports = totalReports - checkedReports;
 
   useEffect(() => {
@@ -58,8 +58,13 @@ function EmployeeDashboard() {
 
   const fetchReports = async () => {
     try {
-      const response = await reportService.getMyReports();
-      setReports(response.data);
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .eq("employee_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setReports(data || []);
     } catch (err) {
       console.error("Error fetching reports:", err);
     }
@@ -81,14 +86,36 @@ function EmployeeDashboard() {
     setLoading(true);
 
     try {
-      const data = new FormData();
-      data.append("completedTasks", formData.completedTasks);
-      data.append("inProgressTasks", formData.inProgressTasks);
-      data.append("commitments", formData.commitments);
-      data.append("challenges", formData.challenges);
-      files.forEach((file) => data.append("files", file));
+      // Upload files to Supabase Storage
+      const uploadedFiles = [];
+      for (const file of files) {
+        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("reports")
+          .upload(fileName, file);
+        if (!uploadError) {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("reports").getPublicUrl(fileName);
+          uploadedFiles.push({
+            filename: fileName,
+            originalName: file.name,
+            path: publicUrl,
+          });
+        }
+      }
 
-      await reportService.createReport(data);
+      const { error } = await supabase.from("reports").insert({
+        employee_id: user.id,
+        date: new Date().toISOString().split("T")[0],
+        completed_tasks: formData.completedTasks,
+        in_progress_tasks: formData.inProgressTasks,
+        commitments: formData.commitments,
+        challenges: formData.challenges,
+        files: uploadedFiles,
+      });
+      if (error) throw error;
+
       setSuccess(t("employee.reportSubmitted"));
       setFormData({
         completedTasks: "",
@@ -99,7 +126,7 @@ function EmployeeDashboard() {
       setFiles([]);
       fetchReports();
     } catch (err) {
-      setError(err.response?.data?.message || t("employee.reportSubmitError"));
+      setError(err.message || t("employee.reportSubmitError"));
     } finally {
       setLoading(false);
     }
@@ -107,7 +134,11 @@ function EmployeeDashboard() {
 
   const handleDelete = async () => {
     try {
-      await reportService.deleteReport(deleteConfirm);
+      const { error } = await supabase
+        .from("reports")
+        .delete()
+        .eq("id", deleteConfirm);
+      if (error) throw error;
       setSuccess(t("employee.reportDeleted"));
       setDeleteConfirm(null);
       fetchReports();
@@ -894,7 +925,7 @@ function EmployeeDashboard() {
             </Paper>
             <Grid container spacing={2}>
               {reports.map((report) => (
-                <Grid item xs={12} sm={6} md={4} key={report._id}>
+                <Grid item xs={12} sm={6} md={4} key={report.id}>
                   <Paper
                     onClick={() => handleOpenReport(report)}
                     sx={{
@@ -940,24 +971,24 @@ function EmployeeDashboard() {
                           variant="subtitle1"
                           sx={{ fontWeight: 600 }}
                         >
-                          {new Date(report.createdAt).toLocaleDateString()}
+                          {new Date(report.created_at).toLocaleDateString()}
                         </Typography>
                         <Chip
                           label={
-                            report.isChecked
+                            report.is_checked
                               ? t("employee.checked")
                               : t("employee.pending")
                           }
                           size="small"
                           sx={{
-                            backgroundColor: report.isChecked
+                            backgroundColor: report.is_checked
                               ? isDark
                                 ? "rgba(17, 141, 211, 0.2)"
                                 : "rgba(17, 141, 211, 0.12)"
                               : isDark
                                 ? "rgba(255, 180, 94, 0.2)"
                                 : "rgba(255, 152, 0, 0.12)",
-                            color: report.isChecked
+                            color: report.is_checked
                               ? "#118dd3"
                               : isDark
                                 ? "#f2b45e"
@@ -984,9 +1015,9 @@ function EmployeeDashboard() {
                           }}
                         />
                       </Stack>
-                      {report.checkedBy?.name && (
+                      {report.is_checked && (
                         <Typography variant="caption" color="text.secondary">
-                          {t("employee.checkedBy")}: {report.checkedBy.name}
+                          {t("employee.checked")}
                         </Typography>
                       )}
                       <Typography
@@ -994,11 +1025,8 @@ function EmployeeDashboard() {
                         color="text.secondary"
                         sx={{ minHeight: 60 }}
                       >
-                        {report.completedTasks || report.tasks
-                          ? `${(report.completedTasks || report.tasks).slice(
-                              0,
-                              120,
-                            )}...`
+                        {report.completed_tasks
+                          ? `${report.completed_tasks.slice(0, 120)}...`
                           : t("employee.noTasks")}
                       </Typography>
                     </Stack>
@@ -1035,31 +1063,29 @@ function EmployeeDashboard() {
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {activeReport
-                      ? new Date(activeReport.createdAt).toLocaleDateString()
+                      ? new Date(activeReport.created_at).toLocaleDateString()
                       : ""}
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Chip
                     label={
-                      activeReport?.isChecked
+                      activeReport?.is_checked
                         ? t("employee.checked")
                         : t("employee.pending")
                     }
                     size="small"
                     sx={{
-                      backgroundColor: activeReport?.isChecked
+                      backgroundColor: activeReport?.is_checked
                         ? "rgba(17, 141, 211, 0.2)"
                         : "rgba(255, 180, 94, 0.2)",
-                      color: activeReport?.isChecked ? "#118dd3" : "#f2b45e",
+                      color: activeReport?.is_checked ? "#118dd3" : "#f2b45e",
                       border: "1px solid rgba(255, 255, 255, 0.08)",
                     }}
                   />
-                  {activeReport?.checkedBy?.name && (
+                  {activeReport?.is_checked && (
                     <Chip
-                      label={`${t("employee.checkedBy")}: ${
-                        activeReport.checkedBy.name
-                      }`}
+                      label={t("employee.checked")}
                       size="small"
                       sx={{
                         backgroundColor: "rgba(17, 141, 211, 0.12)",
@@ -1088,9 +1114,7 @@ function EmployeeDashboard() {
                       {t("employee.completedTasks")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.completedTasks ||
-                        activeReport?.tasks ||
-                        t("employee.noTasks")}
+                      {activeReport?.completed_tasks || t("employee.noTasks")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1109,7 +1133,7 @@ function EmployeeDashboard() {
                       {t("employee.inProgress")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.inProgressTasks || t("employee.none")}
+                      {activeReport?.in_progress_tasks || t("employee.none")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1170,7 +1194,7 @@ function EmployeeDashboard() {
                       {t("employee.approvalNotes")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.approvalNotes || t("employee.none")}
+                      {activeReport?.approval_note || t("employee.none")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1219,8 +1243,8 @@ function EmployeeDashboard() {
               <Button onClick={handleCloseReport}>{t("common.close")}</Button>
               <Button
                 onClick={() => {
-                  if (activeReport?._id) {
-                    setDeleteConfirm(activeReport._id);
+                  if (activeReport?.id) {
+                    setDeleteConfirm(activeReport.id);
                     handleCloseReport();
                   }
                 }}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   Box,
@@ -10,10 +10,6 @@ import {
   Button,
   TextField,
   CircularProgress,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   Divider,
   Grid,
   Stack,
@@ -26,40 +22,18 @@ import {
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PrintIcon from "@mui/icons-material/Print";
-import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import DeleteIcon from "@mui/icons-material/Delete";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import EditIcon from "@mui/icons-material/Edit";
-import KeyIcon from "@mui/icons-material/Key";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import { useReactToPrint } from "react-to-print";
 import { useNavigate } from "react-router-dom";
-import { reportService, authService, userService } from "../services/api";
+import { supabase } from "../supabaseClient";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useThemeMode } from "../context/ThemeContext";
 
 function ManagerDashboard() {
   const [reports, setReports] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState(null);
-  const [usersOpen, setUsersOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
-    id: "",
-    name: "",
-    email: "",
-    role: "employee",
-    position: "",
-  });
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetForm, setResetForm] = useState({
-    id: "",
-    name: "",
-    password: "",
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -67,15 +41,6 @@ function ManagerDashboard() {
     new Date().toISOString().split("T")[0],
   );
   const [reportSearch, setReportSearch] = useState("");
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "employee",
-    position: "",
-  });
   const [activeReport, setActiveReport] = useState(null);
   const [approvalNotes, setApprovalNotes] = useState("");
   const [printReport, setPrintReport] = useState(null);
@@ -95,14 +60,18 @@ function ManagerDashboard() {
 
   useEffect(() => {
     fetchReports(selectedDate);
-    fetchUsers();
   }, [selectedDate]);
 
   const fetchReports = async (date) => {
     setLoading(true);
     try {
-      const response = await reportService.getReportsByDate(date);
-      setReports(response.data);
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*, employee:profiles!employee_id(id, name, email, position)")
+        .eq("date", date)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setReports(data || []);
     } catch (err) {
       console.error("Error fetching reports:", err);
       setError(t("manager.errorLoadingReports"));
@@ -111,150 +80,21 @@ function ManagerDashboard() {
     }
   };
 
-  const fetchUsers = async () => {
-    setUsersLoading(true);
-    try {
-      const response = await userService.getAllUsers();
-      setUsers(response.data);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setError(t("manager.errorLoadingUsers"));
-    } finally {
-      setUsersLoading(false);
-    }
-  };
-
   const handleCheckboxChange = async (reportId, isChecked, notes = "") => {
     try {
-      const response = await reportService.updateReportStatus(
-        reportId,
-        !isChecked,
-        notes,
-      );
-      setReports(
-        reports.map((r) => (r._id === reportId ? response.data.report : r)),
-      );
-      if (activeReport?._id === reportId) {
-        setActiveReport(response.data.report);
+      const { data, error } = await supabase
+        .from("reports")
+        .update({ is_checked: !isChecked, approval_note: notes })
+        .eq("id", reportId)
+        .select("*, employee:profiles!employee_id(id, name, email, position)")
+        .single();
+      if (error) throw error;
+      setReports(reports.map((r) => (r.id === reportId ? data : r)));
+      if (activeReport?.id === reportId) {
+        setActiveReport(data);
       }
     } catch (err) {
       setError(t("manager.errorUpdatingReport"));
-    }
-  };
-
-  const handleCreateChange = (e) => {
-    const { name, value } = e.target;
-    setCreateForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCreateUser = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setCreateLoading(true);
-
-    try {
-      await authService.createUser(createForm);
-      setSuccess(t("manager.userCreated"));
-      setCreateForm({
-        name: "",
-        email: "",
-        password: "",
-        role: "employee",
-        position: "",
-      });
-      setCreateOpen(false);
-      fetchUsers();
-    } catch (err) {
-      setError(err.response?.data?.message || t("manager.errorCreatingUser"));
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
-  const handleDeleteUser = async () => {
-    if (!deleteUserId) {
-      return;
-    }
-
-    try {
-      await userService.deleteUser(deleteUserId);
-      setSuccess(t("manager.userDeleted"));
-      setDeleteUserId(null);
-      fetchUsers();
-    } catch (err) {
-      setError(err.response?.data?.message || t("manager.errorDeletingUser"));
-    }
-  };
-
-  const openEditUser = (userItem) => {
-    setEditForm({
-      id: userItem._id,
-      name: userItem.name || "",
-      email: userItem.email || "",
-      role: userItem.role || "employee",
-      position: userItem.position || "",
-    });
-    setEditOpen(true);
-  };
-
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditUser = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    try {
-      await userService.updateUser(editForm.id, {
-        name: editForm.name,
-        email: editForm.email,
-        role: editForm.role,
-        position: editForm.position,
-      });
-      // If the edited user is the currently logged-in user, update the header too
-      if (user && (user.id === editForm.id || user._id === editForm.id)) {
-        updateUser({
-          name: editForm.name,
-          email: editForm.email,
-          role: editForm.role,
-          position: editForm.position,
-        });
-      }
-      setSuccess(t("manager.userUpdated"));
-      setEditOpen(false);
-      fetchUsers();
-    } catch (err) {
-      setError(err.response?.data?.message || t("manager.errorUpdatingUser"));
-    }
-  };
-
-  const openResetPassword = (userItem) => {
-    setResetForm({ id: userItem._id, name: userItem.name || "", password: "" });
-    setResetOpen(true);
-  };
-
-  const handleResetChange = (e) => {
-    const { value } = e.target;
-    setResetForm((prev) => ({ ...prev, password: value }));
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    try {
-      await userService.updateUserPassword(resetForm.id, resetForm.password);
-      setSuccess(t("manager.passwordUpdated"));
-      setResetOpen(false);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || t("manager.errorUpdatingPassword"),
-      );
     }
   };
 
@@ -268,11 +108,11 @@ function ManagerDashboard() {
       return true;
     }
 
-    const employeeName = report.employeeId?.name || "";
-    const completedTasks = report.completedTasks || report.tasks || "";
-    const inProgressTasks = report.inProgressTasks || "";
-    const commitments = report.commitments || report.notes || "";
-    const challenges = report.challenges || report.struggles || "";
+    const employeeName = report.employee?.name || "";
+    const completedTasks = report.completed_tasks || "";
+    const inProgressTasks = report.in_progress_tasks || "";
+    const commitments = report.commitments || "";
+    const challenges = report.challenges || "";
 
     const haystack = [
       employeeName,
@@ -294,7 +134,7 @@ function ManagerDashboard() {
 
   const handleOpenReport = (report) => {
     setActiveReport(report);
-    setApprovalNotes(report?.approvalNotes || "");
+    setApprovalNotes(report?.approval_note || "");
   };
 
   const handleCloseReport = () => {
@@ -469,7 +309,7 @@ function ManagerDashboard() {
                   </IconButton>
                   <Tooltip title={t("manager.userManagementTooltip")}>
                     <IconButton
-                      onClick={() => setUsersOpen(true)}
+                      onClick={() => navigate("/user-management")}
                       sx={{
                         width: { xs: 38, sm: 44 },
                         height: { xs: 38, sm: 44 },
@@ -652,7 +492,7 @@ function ManagerDashboard() {
                       fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
                     }}
                   >
-                    {reports.filter((report) => report.isChecked).length}
+                    {reports.filter((report) => report.is_checked).length}
                   </Typography>
                 </Box>
               </Grid>
@@ -684,7 +524,7 @@ function ManagerDashboard() {
                       fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
                     }}
                   >
-                    {reports.filter((report) => !report.isChecked).length}
+                    {reports.filter((report) => !report.is_checked).length}
                   </Typography>
                 </Box>
               </Grid>
@@ -754,7 +594,7 @@ function ManagerDashboard() {
               </Paper>
               <Grid container spacing={2}>
                 {filteredReports.map((report) => (
-                  <Grid item xs={12} sm={6} md={4} key={report._id}>
+                  <Grid item xs={12} sm={6} md={4} key={report.id}>
                     <Paper
                       onClick={() => handleOpenReport(report)}
                       sx={{
@@ -787,21 +627,21 @@ function ManagerDashboard() {
                               variant="subtitle1"
                               sx={{ fontWeight: 600 }}
                             >
-                              {report.employeeId?.name || t("common.na")}
+                              {report.employee?.name || t("common.na")}
                             </Typography>
                           </Box>
                           <Chip
                             label={
-                              report.isChecked
+                              report.is_checked
                                 ? t("employee.checked")
                                 : t("employee.pending")
                             }
                             size="small"
                             sx={{
-                              backgroundColor: report.isChecked
+                              backgroundColor: report.is_checked
                                 ? "rgba(17, 141, 211, 0.2)"
                                 : "rgba(255, 180, 94, 0.2)",
-                              color: report.isChecked ? "#118dd3" : "#f2b45e",
+                              color: report.is_checked ? "#118dd3" : "#f2b45e",
                               border: "1px solid rgba(255, 255, 255, 0.08)",
                             }}
                           />
@@ -811,20 +651,17 @@ function ManagerDashboard() {
                           color="text.secondary"
                           sx={{ minHeight: 60 }}
                         >
-                          {report.completedTasks || report.tasks
-                            ? `${(report.completedTasks || report.tasks).slice(
-                                0,
-                                120,
-                              )}...`
+                          {report.completed_tasks
+                            ? `${report.completed_tasks.slice(0, 120)}...`
                             : t("manager.noTasks")}
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          {report.isChecked && report.checkedBy?.email && (
+                          {report.is_checked && (
                             <Typography
                               variant="caption"
                               color="text.secondary"
                             >
-                              {report.checkedBy.email}
+                              {t("employee.checked")}
                             </Typography>
                           )}
                           <Box sx={{ flexGrow: 1 }} />
@@ -848,10 +685,10 @@ function ManagerDashboard() {
                             <PrintIcon fontSize="small" />
                           </IconButton>
                           <Checkbox
-                            checked={report.isChecked}
+                            checked={report.is_checked}
                             onClick={(event) => event.stopPropagation()}
                             onChange={() =>
-                              handleCheckboxChange(report._id, report.isChecked)
+                              handleCheckboxChange(report.id, report.is_checked)
                             }
                             disabled={loading}
                           />
@@ -888,16 +725,16 @@ function ManagerDashboard() {
                 {t("manager.dailyReport")}
               </Typography>
               <Typography variant="body2" sx={{ color: "#333333" }}>
-                {printReport?.employeeId?.name || t("manager.employeeLabel")}
+                {printReport?.employee?.name || t("manager.employeeLabel")}
               </Typography>
-              {printReport?.checkedBy?.name && (
+              {printReport?.is_checked && (
                 <Typography variant="body2" sx={{ color: "#333333" }}>
-                  {t("manager.checkedBy")}: {printReport.checkedBy.name}
+                  {t("employee.checked")}
                 </Typography>
               )}
               <Typography variant="body2" sx={{ color: "#333333", mb: 2 }}>
-                {printReport?.createdAt
-                  ? new Date(printReport.createdAt).toLocaleDateString()
+                {printReport?.created_at
+                  ? new Date(printReport.created_at).toLocaleDateString()
                   : selectedDate}
               </Typography>
               <Divider sx={{ mb: 2 }} />
@@ -906,9 +743,7 @@ function ManagerDashboard() {
                   {t("manager.completedTasks")}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#333333" }}>
-                  {printReport?.completedTasks ||
-                    printReport?.tasks ||
-                    t("manager.noTasks")}
+                  {printReport?.completed_tasks || t("manager.noTasks")}
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
@@ -916,7 +751,7 @@ function ManagerDashboard() {
                   {t("manager.inProgress")}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#333333" }}>
-                  {printReport?.inProgressTasks || t("manager.none")}
+                  {printReport?.in_progress_tasks || t("manager.none")}
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
@@ -924,9 +759,7 @@ function ManagerDashboard() {
                   {t("manager.commitments")}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#333333" }}>
-                  {printReport?.commitments ||
-                    printReport?.notes ||
-                    t("manager.none")}
+                  {printReport?.commitments || t("manager.none")}
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
@@ -934,9 +767,7 @@ function ManagerDashboard() {
                   {t("manager.challenges")}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#333333" }}>
-                  {printReport?.challenges ||
-                    printReport?.struggles ||
-                    t("manager.none")}
+                  {printReport?.challenges || t("manager.none")}
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
@@ -944,7 +775,7 @@ function ManagerDashboard() {
                   {t("manager.approvalNotes")}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#333333" }}>
-                  {printReport?.approvalNotes || t("manager.none")}
+                  {printReport?.approval_note || t("manager.none")}
                 </Typography>
               </Box>
               <Box>
@@ -988,21 +819,21 @@ function ManagerDashboard() {
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Chip
                     label={
-                      activeReport?.isChecked
+                      activeReport?.is_checked
                         ? t("employee.checked")
                         : t("employee.pending")
                     }
                     size="small"
                     sx={{
-                      backgroundColor: activeReport?.isChecked
+                      backgroundColor: activeReport?.is_checked
                         ? "rgba(17, 141, 211, 0.2)"
                         : "rgba(255, 180, 94, 0.2)",
-                      color: activeReport?.isChecked ? "#118dd3" : "#f2b45e",
+                      color: activeReport?.is_checked ? "#118dd3" : "#f2b45e",
                     }}
                   />
-                  {activeReport?.checkedBy?.name && (
+                  {activeReport?.is_checked && (
                     <Typography variant="body2" color="text.secondary">
-                      {t("manager.checkedBy")}: {activeReport.checkedBy.name}
+                      {t("employee.checked")}
                     </Typography>
                   )}
                 </Stack>
@@ -1025,15 +856,15 @@ function ManagerDashboard() {
                       {t("manager.employeeLabel")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.employeeId?.name || t("common.na")}
+                      {activeReport?.employee?.name || t("common.na")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {t("manager.email")}:{" "}
-                      {activeReport?.employeeId?.email || t("common.na")}
+                      {activeReport?.employee?.email || t("common.na")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {t("manager.position")}:{" "}
-                      {activeReport?.employeeId?.position ||
+                      {activeReport?.employee?.position ||
                         t("manager.noPosition")}
                     </Typography>
                   </Paper>
@@ -1053,9 +884,7 @@ function ManagerDashboard() {
                       {t("manager.completedTasks")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.completedTasks ||
-                        activeReport?.tasks ||
-                        t("manager.noTasks")}
+                      {activeReport?.completed_tasks || t("manager.noTasks")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1074,7 +903,7 @@ function ManagerDashboard() {
                       {t("manager.inProgress")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.inProgressTasks || t("manager.none")}
+                      {activeReport?.in_progress_tasks || t("manager.none")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1093,9 +922,7 @@ function ManagerDashboard() {
                       {t("manager.commitments")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.commitments ||
-                        activeReport?.notes ||
-                        t("manager.none")}
+                      {activeReport?.commitments || t("manager.none")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1114,9 +941,7 @@ function ManagerDashboard() {
                       {t("manager.challenges")}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {activeReport?.challenges ||
-                        activeReport?.struggles ||
-                        t("manager.none")}
+                      {activeReport?.challenges || t("manager.none")}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1190,524 +1015,19 @@ function ManagerDashboard() {
               <Button onClick={handleCloseReport}>{t("common.close")}</Button>
               <Button
                 onClick={() =>
-                  activeReport?._id &&
+                  activeReport?.id &&
                   handleCheckboxChange(
-                    activeReport._id,
-                    activeReport.isChecked,
+                    activeReport.id,
+                    activeReport.is_checked,
                     approvalNotes,
                   )
                 }
                 variant="contained"
                 disabled={!activeReport}
               >
-                {activeReport?.isChecked
+                {activeReport?.is_checked
                   ? t("manager.markUnchecked")
                   : t("manager.markChecked")}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog
-            open={usersOpen}
-            onClose={() => setUsersOpen(false)}
-            fullWidth
-            maxWidth="lg"
-            PaperProps={{
-              sx: {
-                m: { xs: 1, sm: 2 },
-                maxHeight: { xs: "calc(100% - 16px)", sm: "calc(100% - 64px)" },
-              },
-            }}
-          >
-            <DialogTitle
-              sx={{
-                background: isDark
-                  ? "linear-gradient(130deg, rgba(17, 141, 211, 0.18), rgba(18, 20, 33, 0.95) 60%)"
-                  : "linear-gradient(130deg, rgba(17, 141, 211, 0.08), rgba(255, 255, 255, 0.98) 60%)",
-                color: isDark ? "#e9edff" : "#1a1a2e",
-                fontWeight: 700,
-                fontSize: { xs: 18, sm: 24 },
-                letterSpacing: 1,
-                mb: 0,
-                p: { xs: 1.5, sm: 2.5 },
-                borderBottom: isDark
-                  ? "1px solid rgba(17, 141, 211, 0.25)"
-                  : "1px solid rgba(17, 141, 211, 0.15)",
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                alignItems: { xs: "flex-start", sm: "center" },
-                justifyContent: "space-between",
-                gap: { xs: 1.5, sm: 2 },
-              }}
-            >
-              <span>{t("manager.userManagement")}</span>
-              <Button
-                variant="contained"
-                startIcon={<PersonAddAltIcon />}
-                onClick={() => setCreateOpen(true)}
-                sx={{
-                  px: { xs: 2, sm: 3 },
-                  py: { xs: 1, sm: 1.2 },
-                  borderRadius: 999,
-                  fontWeight: 700,
-                  fontSize: { xs: 14, sm: 16 },
-                  background:
-                    "linear-gradient(90deg, #0fc1d3 0%, #118dd3 100%)",
-                  ml: { xs: 0, sm: 2 },
-                  width: { xs: "100%", sm: "auto" },
-                }}
-              >
-                {t("manager.addUser")}
-              </Button>
-            </DialogTitle>
-            <DialogContent
-              dividers
-              sx={{ background: isDark ? "#181b2f" : "#f5f7fa" }}
-            >
-              {usersLoading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : (
-                <Grid
-                  container
-                  spacing={3}
-                  columns={12}
-                  sx={{
-                    maxWidth: { xs: "100vw", md: 1200 },
-                    width: "100%",
-                    margin: "0 auto",
-                    overflowX: "hidden",
-                  }}
-                >
-                  {users.map((userItem) => (
-                    <Grid item xs={12} sm={6} md={6} key={userItem._id}>
-                      <Paper
-                        sx={{
-                          p: { xs: 1.5, sm: 2 },
-                          borderRadius: 2,
-                          backgroundColor: isDark ? "#181b2f" : "#ffffff",
-                          border: isDark
-                            ? "1px solid #2a2f4f"
-                            : "1px solid #e0e0e0",
-                          height: "100%",
-                          boxShadow: isDark
-                            ? "0 2px 12px #10131e33"
-                            : "0 2px 12px rgba(0,0,0,0.08)",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Stack
-                          direction={{ xs: "column", sm: "row" }}
-                          spacing={{ xs: 1.5, sm: 2 }}
-                          alignItems={{ xs: "flex-start", sm: "center" }}
-                          justifyContent="space-between"
-                        >
-                          <Stack
-                            direction="row"
-                            spacing={1.5}
-                            alignItems="center"
-                            sx={{ width: { xs: "100%", sm: "auto" } }}
-                          >
-                            <Box
-                              sx={{
-                                width: { xs: 38, sm: 44 },
-                                height: { xs: 38, sm: 44 },
-                                borderRadius: "50%",
-                                backgroundColor: "#118dd3",
-                                color: "#fff",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 700,
-                                fontSize: { xs: 16, sm: 20 },
-                                letterSpacing: "0.02em",
-                                flexShrink: 0,
-                              }}
-                            >
-                              {getInitials(userItem.name)}
-                            </Box>
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Typography
-                                variant="subtitle1"
-                                sx={{
-                                  fontWeight: 700,
-                                  color: isDark ? "#e9edff" : "#1a1a2e",
-                                  mb: 0.5,
-                                  fontSize: { xs: "0.9rem", sm: "1rem" },
-                                }}
-                              >
-                                {userItem.name}
-                              </Typography>
-                              <Chip
-                                label={
-                                  userItem.role === "manager"
-                                    ? t("manager.manager")
-                                    : t("manager.employee")
-                                }
-                                size="small"
-                                sx={{
-                                  backgroundColor:
-                                    userItem.role === "manager"
-                                      ? "rgba(17, 141, 211, 0.2)"
-                                      : "rgba(255, 180, 94, 0.2)",
-                                  color:
-                                    userItem.role === "manager"
-                                      ? "#118dd3"
-                                      : "#f2b45e",
-                                  fontWeight: 700,
-                                  mt: 0.5,
-                                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                                }}
-                              />
-                            </Box>
-                          </Stack>
-                          <Stack
-                            direction="row"
-                            spacing={{ xs: 0.5, sm: 1 }}
-                            alignItems="center"
-                            sx={{ mt: { xs: 1, sm: 0 } }}
-                          >
-                            <Tooltip title={t("manager.editUser")}>
-                              <IconButton
-                                onClick={() => openEditUser(userItem)}
-                                size="small"
-                                sx={{
-                                  color: "#118dd3",
-                                  border: "1px solid #118dd3",
-                                  backgroundColor: isDark
-                                    ? "#181b2f"
-                                    : "#f5f7fa",
-                                  width: { xs: 32, sm: 40 },
-                                  height: { xs: 32, sm: 40 },
-                                  "&:hover": {
-                                    backgroundColor: isDark
-                                      ? "#10131e"
-                                      : "#e8f4fc",
-                                  },
-                                }}
-                              >
-                                <EditIcon
-                                  sx={{ fontSize: { xs: 16, sm: 20 } }}
-                                />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={t("manager.resetPassword")}>
-                              <IconButton
-                                onClick={() => openResetPassword(userItem)}
-                                size="small"
-                                sx={{
-                                  color: "#14b8a6",
-                                  border: "1px solid #14b8a6",
-                                  backgroundColor: isDark
-                                    ? "#181b2f"
-                                    : "#f5f7fa",
-                                  width: { xs: 32, sm: 40 },
-                                  height: { xs: 32, sm: 40 },
-                                  "&:hover": {
-                                    backgroundColor: isDark
-                                      ? "#10131e"
-                                      : "#e6f7f5",
-                                  },
-                                }}
-                              >
-                                <KeyIcon
-                                  sx={{ fontSize: { xs: 16, sm: 20 } }}
-                                />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={t("manager.deleteUser")}>
-                              <IconButton
-                                onClick={() => setDeleteUserId(userItem._id)}
-                                size="small"
-                                sx={{
-                                  color: "#ff4d4f",
-                                  border: "1px solid #ff4d4f",
-                                  backgroundColor: isDark
-                                    ? "#181b2f"
-                                    : "#f5f7fa",
-                                  width: { xs: 32, sm: 40 },
-                                  height: { xs: 32, sm: 40 },
-                                  "&:hover": {
-                                    backgroundColor: isDark
-                                      ? "#2b1820"
-                                      : "#fde8e8",
-                                  },
-                                }}
-                              >
-                                <DeleteIcon
-                                  sx={{ fontSize: { xs: 16, sm: 20 } }}
-                                />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        </Stack>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setUsersOpen(false)}>
-                {t("common.close")}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog
-            open={createOpen}
-            onClose={() => setCreateOpen(false)}
-            fullWidth
-            maxWidth="sm"
-          >
-            <DialogTitle>{t("manager.createUser")}</DialogTitle>
-            <DialogContent dividers>
-              <form id="create-user-form" onSubmit={handleCreateUser}>
-                <TextField
-                  fullWidth
-                  label={t("manager.name")}
-                  name="name"
-                  value={createForm.name}
-                  onChange={handleCreateChange}
-                  margin="normal"
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label={t("manager.email")}
-                  type="email"
-                  name="email"
-                  value={createForm.email}
-                  onChange={handleCreateChange}
-                  margin="normal"
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label={t("manager.password")}
-                  type="password"
-                  name="password"
-                  value={createForm.password}
-                  onChange={handleCreateChange}
-                  margin="normal"
-                  required
-                />
-                <TextField
-                  fullWidth
-                  label={t("manager.position")}
-                  name="position"
-                  value={createForm.position}
-                  onChange={handleCreateChange}
-                  margin="normal"
-                />
-
-                <FormLabel sx={{ mt: 2, display: "block" }}>
-                  {t("manager.role")}
-                </FormLabel>
-                <RadioGroup
-                  name="role"
-                  value={createForm.role}
-                  onChange={handleCreateChange}
-                  row
-                >
-                  <FormControlLabel
-                    value="employee"
-                    control={<Radio />}
-                    label={t("manager.employee")}
-                  />
-                  <FormControlLabel
-                    value="manager"
-                    control={<Radio />}
-                    label={t("manager.manager")}
-                  />
-                </RadioGroup>
-              </form>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setCreateOpen(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                form="create-user-form"
-                variant="contained"
-                disabled={createLoading}
-              >
-                {createLoading ? (
-                  <CircularProgress size={22} />
-                ) : (
-                  t("manager.createUser")
-                )}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog
-            open={!!deleteUserId}
-            onClose={() => setDeleteUserId(null)}
-            fullWidth
-            maxWidth="xs"
-          >
-            <DialogTitle>{t("manager.deleteUser")}</DialogTitle>
-            <DialogContent dividers>
-              {t("manager.deleteUserConfirm")}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setDeleteUserId(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                onClick={handleDeleteUser}
-                color="error"
-                variant="contained"
-              >
-                {t("common.delete")}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog
-            open={editOpen}
-            onClose={() => setEditOpen(false)}
-            fullWidth
-            maxWidth="sm"
-          >
-            <DialogTitle>{t("manager.editUser")}</DialogTitle>
-            <DialogContent dividers>
-              <form id="edit-user-form" onSubmit={handleEditUser}>
-                <TextField
-                  fullWidth
-                  label={t("manager.name")}
-                  name="name"
-                  value={editForm.name}
-                  onChange={handleEditChange}
-                  margin="normal"
-                  required
-                  inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
-                  sx={{
-                    "& input": {
-                      textAlign: isRtl ? "right" : "left",
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label={t("manager.email")}
-                  type="email"
-                  name="email"
-                  value={editForm.email}
-                  onChange={handleEditChange}
-                  margin="normal"
-                  required
-                  inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
-                  sx={{
-                    "& input": {
-                      textAlign: isRtl ? "right" : "left",
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label={t("manager.position")}
-                  name="position"
-                  value={editForm.position}
-                  onChange={handleEditChange}
-                  margin="normal"
-                  inputProps={{ dir: isRtl ? "rtl" : "ltr" }}
-                  sx={{
-                    "& input": {
-                      textAlign: isRtl ? "right" : "left",
-                    },
-                  }}
-                />
-
-                <FormLabel
-                  sx={{
-                    mt: 2,
-                    display: "block",
-                    textAlign: isRtl ? "right" : "left",
-                    width: "100%",
-                  }}
-                >
-                  {t("manager.role")}
-                </FormLabel>
-                <RadioGroup
-                  name="role"
-                  value={editForm.role}
-                  onChange={handleEditChange}
-                  row
-                  sx={{
-                    flexDirection: isRtl ? "row-reverse" : "row",
-                    justifyContent: isRtl ? "flex-end" : "flex-start",
-                  }}
-                >
-                  <FormControlLabel
-                    value="employee"
-                    control={<Radio />}
-                    label={t("manager.employee")}
-                    sx={{ mr: isRtl ? 0 : 2, ml: isRtl ? 2 : 0 }}
-                  />
-                  <FormControlLabel
-                    value="manager"
-                    control={<Radio />}
-                    label={t("manager.manager")}
-                    sx={{ mr: isRtl ? 0 : 2, ml: isRtl ? 2 : 0 }}
-                  />
-                </RadioGroup>
-              </form>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setEditOpen(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button type="submit" form="edit-user-form" variant="contained">
-                {t("common.saveChanges")}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog
-            open={resetOpen}
-            onClose={() => setResetOpen(false)}
-            fullWidth
-            maxWidth="xs"
-          >
-            <DialogTitle>{t("manager.resetPassword")}</DialogTitle>
-            <DialogContent dividers>
-              <form id="reset-password-form" onSubmit={handleResetPassword}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
-                >
-                  {t("manager.setNewPasswordFor", {
-                    name: resetForm.name || t("manager.thisUser"),
-                  })}
-                </Typography>
-                <TextField
-                  fullWidth
-                  label={t("manager.newPassword")}
-                  type="password"
-                  value={resetForm.password}
-                  onChange={handleResetChange}
-                  margin="normal"
-                  required
-                />
-              </form>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setResetOpen(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                form="reset-password-form"
-                variant="contained"
-              >
-                {t("common.updatePassword")}
               </Button>
             </DialogActions>
           </Dialog>

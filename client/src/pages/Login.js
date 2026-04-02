@@ -8,21 +8,11 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Grid,
-  Stack,
-  Chip,
   InputAdornment,
 } from "@mui/material";
-import { authService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useThemeMode } from "../context/ThemeContext";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
@@ -30,28 +20,28 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("employee");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
   const { lang, setLang, t } = useLanguage();
-  const { mode, isDark } = useThemeMode();
+  const { isDark } = useThemeMode();
   const isRtl = lang === "ar";
 
   const handleSubmit = async () => {
+    if (!email.trim() || !password.trim()) return;
     setError("");
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password);
-      const { token, user } = response.data;
-      login(user, token);
+      const profile = await login(email.trim(), password);
       navigate(
-        user.role === "manager" ? "/manager-dashboard" : "/employee-dashboard",
+        profile.role === "manager"
+          ? "/manager-dashboard"
+          : "/employee-dashboard",
       );
     } catch (err) {
-      setError(err.response?.data?.message || t("login.loginFailed"));
+      setError(err.message || t("login.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -154,83 +144,6 @@ function Login() {
             </Alert>
           )}
           <Box>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                mb: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: { xs: 1, sm: 2 },
-                  justifyContent: "center",
-                  width: "100%",
-                }}
-              >
-                <Button
-                  variant={role === "employee" ? "contained" : "outlined"}
-                  onClick={() => setRole("employee")}
-                  sx={{
-                    flex: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                    py: { xs: 1, sm: 1.2 },
-                    background: role === "employee" ? "#118dd3" : "none",
-                    color:
-                      role === "employee"
-                        ? "#fff"
-                        : isDark
-                          ? "#cfd3ff"
-                          : "#5a5a7a",
-                    borderColor: "#118dd3",
-                    boxShadow:
-                      role === "employee" ? "0 4px 16px #118dd333" : "none",
-                    "&:hover": {
-                      background:
-                        role === "employee"
-                          ? "#0e6fa0"
-                          : "rgba(17, 141, 211, 0.08)",
-                    },
-                  }}
-                >
-                  {t("common.employee")}
-                </Button>
-                <Button
-                  variant={role === "manager" ? "contained" : "outlined"}
-                  onClick={() => setRole("manager")}
-                  sx={{
-                    flex: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                    py: { xs: 1, sm: 1.2 },
-                    background: role === "manager" ? "#f2b45e" : "none",
-                    color:
-                      role === "manager"
-                        ? "#181b2f"
-                        : isDark
-                          ? "#cfd3ff"
-                          : "#5a5a7a",
-                    borderColor: "#f2b45e",
-                    boxShadow:
-                      role === "manager" ? "0 4px 16px #f2b45e33" : "none",
-                    "&:hover": {
-                      background:
-                        role === "manager"
-                          ? "#d99a2b"
-                          : "rgba(242, 180, 94, 0.08)",
-                    },
-                  }}
-                >
-                  {t("common.manager")}
-                </Button>
-              </Box>
-            </Box>
             <TextField
               fullWidth
               placeholder={t("login.email")}

@@ -5,16 +5,23 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+import {
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  CircularProgress,
+  Box,
+} from "@mui/material";
 import Login from "./pages/Login";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ManagerDashboard from "./pages/BossDashboard";
+import UserManagement from "./pages/UserManagement";
 import { useAuth } from "./context/AuthContext";
 import { useLanguage } from "./context/LanguageContext";
 import { useThemeMode } from "./context/ThemeContext";
 
 function App() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const { direction } = useLanguage();
   const { mode } = useThemeMode();
 
@@ -168,6 +175,22 @@ function App() {
     [direction, mode],
   );
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: mode === "dark" ? "#121421" : "#f5f7fa",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -189,6 +212,16 @@ function App() {
             element={
               isAuthenticated && user?.role === "manager" ? (
                 <ManagerDashboard />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/user-management"
+            element={
+              isAuthenticated && user?.role === "manager" ? (
+                <UserManagement />
               ) : (
                 <Navigate to="/login" />
               )
