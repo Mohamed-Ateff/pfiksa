@@ -13,3 +13,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Keep-alive ping every 4 days to prevent Supabase free tier from pausing
+const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+setInterval(async () => {
+  try {
+    await supabase.from("profiles").select("id").limit(1);
+  } catch (_) {}
+}, FOUR_DAYS_MS);
