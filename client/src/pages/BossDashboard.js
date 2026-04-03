@@ -103,7 +103,12 @@ function ManagerDashboard() {
     // Optimistic update — immediately reflect the change in UI
     const optimistic = reports.map((r) =>
       r.id === reportId
-        ? { ...r, is_checked: !isChecked, approval_note: notes, is_edited: false }
+        ? {
+            ...r,
+            is_checked: !isChecked,
+            approval_note: notes,
+            is_edited: false,
+          }
         : r,
     );
     setReports(optimistic);
