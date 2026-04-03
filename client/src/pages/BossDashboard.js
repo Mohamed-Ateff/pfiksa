@@ -100,9 +100,24 @@ function ManagerDashboard() {
   };
 
   const handleCheckboxChange = async (reportId, isChecked, notes = "") => {
+    // Optimistic update — immediately reflect the change in UI
+    const optimistic = reports.map((r) =>
+      r.id === reportId
+        ? { ...r, is_checked: !isChecked, approval_note: notes, is_edited: false }
+        : r,
+    );
+    setReports(optimistic);
+    if (activeReport?.id === reportId) {
+      setActiveReport((prev) => ({
+        ...prev,
+        is_checked: !isChecked,
+        approval_note: notes,
+        is_edited: false,
+      }));
+    }
+
     try {
-      // Step 1: update (don't chain .select() — multiple RLS policies can cause 0 rows returned)
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from("reports")
         .update({
           is_checked: !isChecked,
@@ -110,22 +125,14 @@ function ManagerDashboard() {
           is_edited: false,
         })
         .eq("id", reportId);
-      if (updateError) throw updateError;
-
-      // Step 2: fetch the updated row separately
-      const { data, error: fetchError } = await supabase
-        .from("reports")
-        .select("*, employee:profiles!employee_id(id, name, email, position)")
-        .eq("id", reportId)
-        .single();
-      if (fetchError) throw fetchError;
-
-      setReports(reports.map((r) => (r.id === reportId ? data : r)));
-      if (activeReport?.id === reportId) {
-        setActiveReport(data);
-      }
+      if (error) throw error;
     } catch (err) {
       console.error("Error updating report:", err);
+      // Revert optimistic update on failure
+      setReports(reports);
+      if (activeReport?.id === reportId) {
+        setActiveReport(activeReport);
+      }
       setError(t("manager.errorUpdatingReport"));
     }
   };
